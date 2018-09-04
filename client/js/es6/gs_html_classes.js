@@ -37,6 +37,65 @@ function get_styles(categories) {
     return styles;
 }
 
+class login_form extends html.bs_form {
+    constructor(parent) {
+
+        //
+        // Username
+        //
+
+        let username_label = 'Username';
+        let username_input = new html.text_input('autoparent', new Map([
+            ['class', 'form-control']
+        ]));
+        let username_form = new html.bs_form_group('autoparent', username_label, username_input, new Map([
+            ['class', 'col-12 col-sm-4 offset-sm-4']
+        ]));
+
+        //
+        // Password
+        //
+
+        let password_label = 'Password';
+        let password_input = new html.password_input('autoparent', new Map([
+            ['class', 'form-control']
+        ]));
+        let password_form = new html.bs_form_group('autoparent', password_label, password_input, new Map([
+            ['class', 'col-12 col-sm-4 offset-sm-4']
+        ]));
+
+        //
+        // Buttons
+        //
+        let login_button = new html.submit_input('autoparent', 'Login', new Map([
+            ['class', 'col-12 col-sm-4 offset-sm-4'],
+        ]));
+
+
+
+        let form_fields = {
+            username: username_form,
+            password: password_form,
+            //login: login_button
+        };
+
+        let form_buttons = {
+           login: login_button
+        };
+
+        super(parent, form_fields, form_buttons, new Map([
+            ['class', 'form-row']
+        ]));
+        this.set_handler('submit', (event) => {
+            console.log("submit")
+            let username = this.fields.username.control.value 
+            document.cookie = "gs3user = " + username;
+            socket.emit('go', username)
+            event.preventDefault();
+        })
+
+    }
+}
 class expenditure_input_form extends html.bs_form {
     constructor(parent, selectable_items, fill_expenditure) {
         const form_mode = {
@@ -121,7 +180,7 @@ class expenditure_input_form extends html.bs_form {
         ]));
 
         //
-        // Submit Button
+        // Buttons
         //
         let add_button = new html.button('autoparent', 'Add', new Map([
             ['type', 'button'],
@@ -270,4 +329,4 @@ class expenditure_list extends html.div {
     }
 }
 
-export { init, expenditure_input_form, expenditure_row, expenditure_list, get_styles };
+export { init, login_form, expenditure_input_form, expenditure_row, expenditure_list, get_styles };

@@ -460,6 +460,17 @@ class text_input extends input {
     }
 }
 
+class password_input extends input {
+    constructor(parent, extra_attributes = []) {
+        let attributes = new Map([
+            ['type', 'password'],
+        ]);
+        concat_attributes(attributes, extra_attributes);
+        super(parent, attributes);
+    }
+}
+
+
 class number_input extends input {
     constructor(parent, extra_attributes = []) {
         let attributes = new Map([
@@ -487,11 +498,12 @@ class date_input extends input {
 }
 
 class submit_input extends active_html_base {
-    constructor(parent, extra_attributes = []) {
+    constructor(parent, text = "Submit", extra_attributes = []) {
         let tag = 'input';
         let inner = '';
         let attributes = new Map([
             ['type', 'submit'],
+            ['value', text]
         ]);
         concat_attributes(attributes, extra_attributes);
         super(parent, tag, inner, attributes);
@@ -876,6 +888,7 @@ export {
     // c_html,
     active_html_base,
     text_input,
+    password_input,
     number_input,
     date_input,
     submit_input,

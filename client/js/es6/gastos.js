@@ -43,62 +43,73 @@ function get_attr_by_attr_in_array(array, search_attr, search_value, ret_attr) {
 }
 
 function test() {
-    let new_transaction_form = new gs_html.expenditure_input_form("input_expenditure", {
-        buyers: buyers,
-        categories: categories,
-        pay_methods: pay_methods
-    })
-    new_transaction_form.draw()
-    new_transaction_form.link_handlers()
-
-
-    function update_categories() {
-        console.log('asking for categories')
-        socket.emit('update_categories');
+    let new_transaction_form;
+    
+    let login_box =  new gs_html.login_form("login_box")
+    login_box.draw();
+    login_box.link_handlers();
+    
+ 
+    // coockie control
+    let allcoockies = document.cookie;
+    console.log(allcoockies)
+    let coockiearray =allcoockies.split(';');
+    for (let coockie of coockiearray) {
+        let name = coockie.split('=')[0].trim();
+        let value = coockie.split('=')[1].trim();
+        console.log(coockie)
+        if (name === "gs3user")
+        {
+            console.log('found')
+           let last_user_label = new html.span("last_user", value)
+           last_user_label.draw()
+           break;
+        }
     }
-
-
-
-
+    /////////////////////
+    
     socket.on('remote_log', function(text) {
         console.log("Server says:", text);
     });
 
+    socket.on("render_page", function() {
+        let new_transaction_form = new gs_html.expenditure_input_form("input_expenditure", {
+            buyers: buyers,
+            categories: categories,
+            pay_methods: pay_methods
+        })
+        new_transaction_form.draw()
+        new_transaction_form.link_handlers()
+    });
+
     socket.on('init', function(data) {
         console.log('Init recived.')
-        categories = [];
-        buyers = [];
-        pay_methods = []
+        login_box.remove();
         let init_data = data;
 
         function deserialize_into(s_array, data_class) {
             let r_array = [];
             for (let item of s_array) {
-                //r_array.push(new (eval(data_class))(item._label, item._uid, item._color, item._uid));
                 r_array.push(new logic[data_class](item._label, item._uid, item._color, item._uid));
             }
             return r_array;
         }
         for (let selectable of Object.keys(selectable_items)) {
-            selectable_items[selectable] = deserialize_into(init_data[selectable].data, init_data[selectable].type)
+            selectable_items[selectable] = deserialize_into(init_data[selectable].data, init_data[selectable].type);
         }
 
-        let styles = gs_html.get_styles(selectable_items.categories)
-        
-        $('style').html(styles)
-        new_transaction_form.update_options(selectable_items)
-        new_transaction_form.link_handlers()
+        let styles = gs_html.get_styles(selectable_items.categories);
+        $('style').html(styles);
 
+        new_transaction_form = new gs_html.expenditure_input_form("input_expenditure", selectable_items);
+        new_transaction_form.draw();
+        new_transaction_form.link_handlers();
 
     });
 
     socket.on('update_categories', function(recived_categories) {
         console.log('reciving categories')
         categories = recived_categories;
-        //-------------
-        // category_select_box2.update_list(categories);
-        // category_select_box2.draw();
-        // category_select_box2.link();
     });
 
     socket.on('update_expenditures', function(recived_expenditures) {
@@ -109,7 +120,6 @@ function test() {
 
     socket.on('new_category', function(category) {
         categories.push(category);
-        //    bs_dropdown_items_redo('categories', categories);
     });
 
     function send(msg) {
@@ -119,7 +129,7 @@ function test() {
 
     socket.on('connect', function() {
         console.log("Socket connected");
-        socket.emit('init');
+        socket.emit('backlog', 'connected');
     });
 
     function update_expenditures(recived_expenditures) {

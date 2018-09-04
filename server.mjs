@@ -90,6 +90,34 @@ io.on('connection', function(socket) {
         });
     });
 
+    socket.on('go', (username) => {
+        remote_log('going')
+        if (username == "papo") {
+        db.load_init_file((err, file_data) => {
+            if (err) {
+                remote_log("Error loading init data.");
+            }
+            else {
+                let init_data = JSON.parse(file_data);
+                //let data = { init_data, expenditures };
+                socket.emit('init', init_data);
+            }
+            db.load_expenditures((err, file_data) => {
+                if (err) {
+                    remote_log("Error loading expenditures data.");
+                }
+                else {
+                    expenditures = JSON.parse(file_data);
+                    //let data = { init_data, expenditures };
+                    socket.emit('update_expenditures', expenditures);
+                }
+            });
+        });
+        } else {
+            remote_log("wrong username")
+        }
+    });
+
     socket.on('update_categories', function() {
         remote_log('sending categories');
         socket.emit('update_categories', categories);
@@ -136,6 +164,10 @@ io.on('connection', function(socket) {
     socket.on('delete_category', function(category) {
         remove_from_list(categories, category);
         broadcast('update_categories', categories);
+    });
+    
+    socket.on('backlog', function(msg) {
+        remote_log(msg);
     });
 
     function save_expenditures() {
