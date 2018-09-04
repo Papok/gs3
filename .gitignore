@@ -62,5 +62,5 @@ typings/
 
 # Other files
 steps
-init_data.json
+#init_data.json
 transactions.json
