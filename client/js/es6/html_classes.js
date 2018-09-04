@@ -29,7 +29,14 @@ function attributes_string(attributes) {
     var string = '';
     attributes = attributes ? attributes : [];
     for (let [attr, value] of attributes) {
-        string += attr + '="' + value + '" ';
+        if (typeof value === "boolean") {
+            if (value) {
+                string += attr + ' ';
+            }
+        }
+        else {
+            string += attr + '="' + value + '" ';
+        }
     }
     return string.slice(0, -1);
 }
@@ -199,6 +206,22 @@ class active_html_base {
         this.link_handlers();
     }
 
+    add_attr(attribute_name, value) {
+        let extra_attribute = [
+            [attribute_name, value]
+        ]
+        concat_attributes(this.attributes, extra_attribute);
+        $(this.selector).prop(attribute_name, value)
+    }
+
+    hide() {
+        this.add_attr("hidden", true);
+    }
+
+    unhide() {
+        this.add_attr("hidden", false);
+    }
+
 }
 
 class span extends active_html_base {
@@ -268,49 +291,65 @@ class option extends active_html_base {
 
     set value(new_value) {
         this.value = new_value;
+        //this.redraw();
         $(this.selector).val(new_value);
-        this.redraw();
+        console.log(new_value)
+
     }
 }
 
 class select extends active_html_base {
-    constructor(parent = 'autoparent', options = [new option()], extra_attributes = []) {
+    constructor(parent = 'autoparent', options = [new option()], value = 0, extra_attributes = []) {
         let tag = 'select';
-        let inner = options;
-        let attributes = new Map();
+        let inner = [];
+        let attributes = new Map([
+            ['autocomplete', 'off']
+        ]);
         concat_attributes(attributes, extra_attributes);
         super(parent, tag, inner, attributes);
-        this.options = options;
+        this._value = (value === 0) ? options[0].uid : value;
+        this._options = options
+        this._update_options(options);
+    }
+
+    draw() {
+        super.draw();
+        // let selector = this.selector + ' option[value="' + this._value + '"]'
+        // console.log(selector)
+        // console.log($(selector))
+        // console.log($(selector).html())
+        // $(selector).prop('selected', 'selected')
+        // //this.add_attr('value', this._value)
+        // $(selector).prop('data-test',this._value)
+        // $(selector).html('---')
+        // console.log($(selector).html())
+        $(this.selector).val(this._value).trigger('change', true);
     }
 
     get value() {
         return $(this.selector).val()
     }
-}
 
-class rich_select extends select {
-    constructor(parent = 'autoparent', options = [new logic.rich_option_item()], extra_attributes = []) {
-        let attributes = new Map();
-        concat_attributes(attributes, extra_attributes);
-        super(parent, [], attributes);
-        this._update_options(options);
+    set value(new_value) {
+        this._value = new_value
+        this._update_options(this._options)
+        this.redraw()
     }
 
-    _update_options(options = [new logic.rich_option_item()]) {
+    _update_options(options = [new logic.rich_option_item()]) { // esto da error porque en ningun momento importo esta clase, aunque no debería llegar a la instancia donde no se provee "options"
+        this._value = (this._value === 0)? options[0]._value : this._value
         this.inner = [];
         for (let option of options) {
             this._add_option(option);
         }
     }
 
-    _add_option(option_) {
-        let label = option_.label;
-        let value = option_.value;
-        let color = option_.color;
-        let background_color_set_string = "background-color: " + (color || "rgba(0, 0, 0, 0");
-        this.inner.push(new option(this, label, value, [
-            ['style', background_color_set_string]
-        ]));
+    _add_option(new_option) {
+        if (this._value == new_option._value) {
+            new_option.add_attr('selected', 'selected')
+        }
+        this.inner.push(new_option);
+
     }
 
     update_options(options = [new logic.rich_option_item()]) {
@@ -330,6 +369,55 @@ class rich_select extends select {
             this.draw();
         }
     }
+}
+
+class rich_select extends select {
+    constructor(parent = 'autoparent', options = [new logic.rich_option_item()], value = 0, extra_attributes = []) {
+        let attributes = new Map();
+        concat_attributes(attributes, extra_attributes);
+        super(parent, options, value, attributes);
+        this._update_options(options);
+    }
+
+    // _update_options(options = [new logic.rich_option_item()]) {
+    //     this.inner = [];
+    //     for (let option of options) {
+    //         this._add_option(option);
+    //     }
+    // }
+
+    _add_option(option_) {
+        let label = option_.label;
+        let value = option_.value;
+        let color = option_.color;
+        let background_color_set_string = "background-color: " + (color || "rgba(0, 0, 0, 0");
+        // this.inner.push(new option(this, label, value, [
+        //     ['style', background_color_set_string]
+        // ]));
+        let new_option = new option(this, label, value, [
+            ['style', background_color_set_string]
+        ]);
+        super._add_option(new_option)
+        
+    }
+
+    // update_options(options = [new logic.rich_option_item()]) {
+    //     this._update_options(options);
+    //     if (this.drawn && this.autodraw) {
+    //         this.draw();
+    //     }
+    //     else {
+    //         console.log('tried to draw');
+    //         console.log(this);
+    //     }
+    // }
+
+    // add_option(option) {
+    //     this._add_option(option);
+    //     if (this.parent.id !== 'autoparent' && this.autodraw) {
+    //         this.draw();
+    //     }
+    // }
 }
 
 class label extends active_html_base {
@@ -428,32 +516,55 @@ class bs_form_group extends active_html_base {
         this.control = control;
     }
 
-    get_value() {
-        return this.control.get_value();
+    get value() {
+        return this.control.value;
+    }
+
+    set value(new_value) {
+        this.control.value = new_value;
     }
 }
 
 class bs_form extends active_html_base {
-    constructor(parent, elements, extra_attributes = []) {
+    constructor(parent, fields, buttons, extra_attributes = []) {
         let tag = 'form';
         let inner = [];
-        for (let [element, control] of Object.entries(elements)) {
+        for (let control of Object.values(fields)) {
             inner.push(control);
         }
+        for (let control of Object.values(buttons)) {
+            inner.push(control);
+        }
+
         let attributes = new Map();
         concat_attributes(attributes, extra_attributes);
         super(parent, tag, inner, attributes);
-        this.elements = elements;
+        this.fields = fields;
+        this.buttons = buttons;
+
     }
 
-    get_value() {
+    get_values() {
         let ret = {};
-        for (let [element, control] of Object.entries(this.elements)) {
-            if (element != 'button') {
-                ret[element] = control.get_value();
-            }
+        for (let [field, control] of Object.entries(this.fields)) {
+            ret[field] = control.value;
         }
         return ret;
+    }
+
+    get_data() {
+        let ret = {};
+        for (let [field, control] of Object.entries(this.fields)) {
+            ret[field] = control.value;
+        }
+        return ret;
+    }
+
+    set_values(data) {
+        for (let [field, control] of Object.entries(this.fields)) {
+            control.value = data[field];
+        }
+        this.redraw()
     }
 }
 

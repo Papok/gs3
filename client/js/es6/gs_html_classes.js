@@ -1,7 +1,11 @@
+/* global $ */
+
 import * as html from './html_classes.js';
+import * as logic from '../../../common/logic_classes.mjs';
 
 var socket = undefined;
 var environment = undefined;
+
 
 function init(env) {
     environment = env;
@@ -12,8 +16,41 @@ function get_attr_by_attr_in_array(array, search_attr, search_value, ret_attr) {
     return array[array.findIndex(item => item[search_attr] == search_value)][ret_attr];
 }
 
+function get_styles(categories) {
+    let open_xs = '@media (max-width: 575px) {'
+    let open_sm = '@media (min-width: 576px) and (max-width: 767px){'
+    let open_md = '@media (min-width: 768px) and (max-width: 991px){'
+    let open_lg = '@media (min-width: 992px) and (max-width: 1199px){'
+    let open_xl = '@media (min-width: 1200px) {'
+
+    let styles = open_xs;
+    for (let category of categories) {
+        let color = category.color
+        let uid = category.uid
+        let style = ` .cl${uid} { background: ${color}; overflow: hidden; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block}`
+        // let style = `div { background: ${color};}`
+        styles += style;
+    }
+    styles += '}'
+
+
+    return styles;
+}
+
 class expenditure_input_form extends html.bs_form {
-    constructor(parent, selectable_items) {
+    constructor(parent, selectable_items, fill_expenditure) {
+        const form_mode = {
+            ADD: Symbol('add'),
+            EDIT: Symbol('edit')
+        }
+        Object.freeze(form_mode)
+        let mode = (fill_expenditure === undefined) ? form_mode.ADD : form_mode.EDIT;
+
+        let expenditure_uid // = 0
+        if (mode === form_mode.ADD) {
+            expenditure_uid = 0;
+        }
+
         //
         // Date
         //
@@ -30,7 +67,7 @@ class expenditure_input_form extends html.bs_form {
         // Buyer
         //
         let buyer_label = 'Buyer';
-        let buyer_select = new html.rich_select('autoparent', selectable_items.buyers, new Map([
+        let buyer_select = new html.rich_select('autoparent', selectable_items.buyers, undefined, new Map([
             ['class', 'form-control']
         ]));
         let buyer_form = new html.bs_form_group('autoparent', buyer_label, buyer_select, new Map([
@@ -42,7 +79,7 @@ class expenditure_input_form extends html.bs_form {
         // Category
         //
         let category_label = 'Category';
-        let category_select = new html.rich_select('autoparent', selectable_items.categories, new Map([
+        let category_select = new html.rich_select('autoparent', selectable_items.categories, undefined, new Map([
             ['class', 'form-control']
         ]));
         let category_form = new html.bs_form_group('autoparent', category_label, category_select, new Map([
@@ -76,7 +113,7 @@ class expenditure_input_form extends html.bs_form {
         // Pay Method
         //
         let pay_method_label = 'Pay Method';
-        let pay_method_select = new html.rich_select('autoparent', selectable_items.pay_methods, new Map([
+        let pay_method_select = new html.rich_select('autoparent', selectable_items.pay_methods, undefined, new Map([
             ['class', 'form-control']
         ]));
         let pay_method_form = new html.bs_form_group('autoparent', pay_method_label, pay_method_select, new Map([
@@ -86,43 +123,88 @@ class expenditure_input_form extends html.bs_form {
         //
         // Submit Button
         //
-        let submit_button = new html.button('autoparent', 'Send', new Map([
+        let add_button = new html.button('autoparent', 'Add', new Map([
+            ['type', 'button'],
+            ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+        ]));
+        let cancel_button = new html.button('autoparent', 'Cancel', new Map([
+            ['type', 'button'],
+            ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+        ]));
+        let delete_button = new html.button('autoparent', 'Delete', new Map([
+            ['type', 'button'],
+            ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+        ]));
+        let save_button = new html.button('autoparent', 'Save', new Map([
             ['type', 'button'],
             ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
         ]));
 
+        add_button.set_handler('click', () => {
+            console.log("add.")
+            socket.emit('new_expenditure', this.get_values())
+        })
 
-        let form_elements = {
+        save_button.set_handler('click', () => {
+            console.log("save.")
+            let edit_expenditure = this.get_values();
+            edit_expenditure.uid = fill_expenditure.uid
+            console.log(edit_expenditure)
+            socket.emit('edit_expenditure', edit_expenditure)
+        })
+
+        let form_fields = {
             date: date_form,
             buyer: buyer_form,
             category: category_form,
             pay_method: pay_method_form,
             detail: details_form,
             amount: amount_form,
-            button: submit_button
         };
 
-        super(parent, form_elements, new Map([
+        let form_buttons = {
+            add_button: add_button,
+            cancel_button: cancel_button,
+            delete_button: delete_button,
+            save_button: save_button
+        }
+
+        super(parent, form_fields, form_buttons, new Map([
             ['class', 'form-row']
         ]));
+
+
+        switch (mode) {
+            case form_mode.ADD:
+                this.set_add_mode();
+                break;
+            case form_mode.EDIT:
+                this.set_edit_mode(fill_expenditure);
+                break;
+            default:
+                console.error("A terrible error ocurred!")
+        }
     }
 
     update_options(selectable_items) {
-        this.elements.buyer.control.update_options(selectable_items.buyers);
-        this.elements.category.control.update_options(selectable_items.categories);
-        this.elements.pay_method.control.update_options(selectable_items.pay_methods);
+        this.fields.buyer.control.update_options(selectable_items.buyers);
+        this.fields.category.control.update_options(selectable_items.categories);
+        this.fields.pay_method.control.update_options(selectable_items.pay_methods);
     }
 
-    get_data() {
-        let ret = {
-            date: (new Date(this.elements.date.control.value)).getTime(),
-            buyer: this.elements.buyer.control.value,
-            category: this.elements.category.control.value,
-            pay_method: this.elements.pay_method.control.value,
-            detail: this.elements.detail.control.value,
-            amount: this.elements.amount.control.value,
-        };
-        return ret;
+
+    set_edit_mode(fill_expenditure) {
+        this.buttons.add_button.hide()
+        this.set_values(fill_expenditure);
+        this.add_attr("data-expenditure-uid", fill_expenditure.uid)
+    }
+
+    set_add_mode() {
+        this.add_attr("data-expenditure-uid", this.expenditure_uid)
+        this.buttons.add_button.unhide()
+        this.buttons.cancel_button.hide()
+        this.buttons.delete_button.hide()
+        this.buttons.save_button.hide()
     }
 }
 
@@ -137,16 +219,17 @@ class expenditure_row extends html.bs_row {
             get_attr_by_attr_in_array(selectable_items.pay_methods, '_value', expenditure.pay_method, '_label')
         ];
         let col_desc = [
-            'col-md-2',
-            'col-md-1',
-            'col-md-2',
-            'col-md-3',
-            'col-md-2',
-            'col-md-2',
+            'col-3 col-md-2',
+            'col-3 col-md-1',
+            'col-6 col-md-2',
+            'col-12 col-md-3',
+            'col-4 col-md-2',
+            'col-8 col-md-2',
         ];
-        super(parent, elements, col_desc/*, [
-            ["style", "overflow:hidden;white-space: nowrap;text-overflow:ellipsis"],
-        ]*/)
+        let category_class = `cl${expenditure.category}`;
+        super(parent, elements, col_desc, [
+            ["class", category_class],
+        ]);
         this.expenditure = expenditure;
         this.selectable_items = selectable_items;
     }
@@ -168,15 +251,23 @@ class expenditure_list extends html.div {
         let list_items = expenditures.map((expenditure) => new expenditure_row('autoparent', expenditure, selectable_items));
         for (let item of list_items) {
             item.set_handler('click', () => {
-                item.remove(); // the items of items_list will be put inside an 'li' element by the unrdered_list contructor, so we romeve the 'li' element.
-                socket.emit('delete_expenditure', item.expenditure.uid);
+                let edit_transaction_form = new expenditure_input_form("edit_expenditure", {
+                    buyers: selectable_items.buyers,
+                    categories: selectable_items.categories,
+                    pay_methods: selectable_items.pay_methods
+                }, item.expenditure)
+                edit_transaction_form.draw();
+                edit_transaction_form.link_handlers();
+
+                // item.remove(); // the items of items_list will be put inside an 'li' element by the unrdered_list contructor, so we romeve the 'li' element.
+                // socket.emit('delete_expenditure', item.expenditure.uid);
             });
 
         }
-        let list = new html.div ('autoparent', list_items);
+        let list = new html.div('autoparent', list_items);
         let inner = [list, ];
         super(parent, inner);
     }
 }
 
-export { init, expenditure_input_form, expenditure_row, expenditure_list };
+export { init, expenditure_input_form, expenditure_row, expenditure_list, get_styles };

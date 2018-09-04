@@ -1,7 +1,6 @@
 /* global io */
 /* global $ */
 console.log("running-1")
-//import { init_html_classes, attribute, attributes_string, c_html, bs_text_input, bs_items_list, bs_dd_text_input, bs_dd_items_list, bs_dd2, button } from '/js/gastos/classes.js';
 import * as html from './html_classes.js';
 import * as gs_html from './gs_html_classes.js';
 import * as logic from '../../../common/logic_classes.mjs';
@@ -23,11 +22,10 @@ var socket = io.connect();
 global.socket = socket;
 html.init_html_classes(global);
 gs_html.init(global);
-//init_html_classes(global);
 
-var categories = [new logic.Category('Loading...', 'loading')];
-var buyers = [new logic.Buyer('Loading...', 'loading')];
-var pay_methods = [new logic.PayMethod('Loading...', 'loading')];
+var categories = [new logic.Category('Loading...', 0)];
+var buyers = [new logic.Buyer('Loading...', 0)];
+var pay_methods = [new logic.PayMethod('Loading...', 0)];
 
 let selectable_items = { categories, buyers, pay_methods };
 
@@ -44,30 +42,14 @@ function get_attr_by_attr_in_array(array, search_attr, search_value, ret_attr) {
     return array[array.findIndex(item => item[search_attr] == search_value)][ret_attr];
 }
 
-function render_expenditure(expenditure) {
-    console.log(expenditure.date)
-    let date_string = (new Date(expenditure.date)).toLocaleDateString()
-    let ret = date_string + " "
-    ret += get_attr_by_attr_in_array(buyers, '_value', expenditure.buyer, '_label') + " ";
-    ret += get_attr_by_attr_in_array(categories, '_value', expenditure.category, '_label') + " ";
-    ret += expenditure.detail + " ";
-    ret += expenditure.amount + " ";
-    ret += get_attr_by_attr_in_array(pay_methods, '_value', expenditure.pay_method, '_label');
-    return ret;
-}
-
-
 function test() {
-
     let new_transaction_form = new gs_html.expenditure_input_form("input_expenditure", {
         buyers: buyers,
         categories: categories,
         pay_methods: pay_methods
     })
-    new_transaction_form.elements.button.set_handler('click', () => socket.emit('new_expenditure', new_transaction_form.get_data()))
     new_transaction_form.draw()
-    //new_transaction_form.link_handlers()  /// antes funcionaba.... parece que el link_handlers no cascadea.
-    new_transaction_form.elements.button.link_handlers()
+    new_transaction_form.link_handlers()
 
 
     function update_categories() {
@@ -101,6 +83,9 @@ function test() {
             selectable_items[selectable] = deserialize_into(init_data[selectable].data, init_data[selectable].type)
         }
 
+        let styles = gs_html.get_styles(selectable_items.categories)
+        
+        $('style').html(styles)
         new_transaction_form.update_options(selectable_items)
         new_transaction_form.link_handlers()
 
@@ -148,4 +133,3 @@ function test() {
         list.link_handlers()
     }
 }
-    

@@ -103,15 +103,15 @@ io.on('connection', function(socket) {
     socket.on('new_expenditure', function(expenditure) {
         let new_expenditure = new logic.Expenditure(expenditure);
         expenditures.push(new_expenditure);
-        db.save_expenditures(expenditures, (err) => {
-            if (err) {
-                remote_log("Error accessing expenditure file.");
-            }
-            else {
-                broadcast("update_expenditures", expenditures);
-            }
-        });
+        save_expenditures()
     });
+
+    socket.on('edit_expenditure', function(expenditure) {
+        let edit_expenditure_idx = expenditures.findIndex(item => item.uid === expenditure.uid)
+        let edit_expenditure = new logic.Expenditure(expenditure);
+        expenditures[edit_expenditure_idx] = edit_expenditure;
+        save_expenditures()
+    })
 
     socket.on('delete_expenditure', function(expenditure_uid) {
         let idx = expenditures.findIndex(expenditure => expenditure.uid === expenditure_uid);
@@ -138,6 +138,16 @@ io.on('connection', function(socket) {
         broadcast('update_categories', categories);
     });
 
+    function save_expenditures() {
+        db.save_expenditures(expenditures, (err) => {
+            if (err) {
+                remote_log("Error accessing expenditure file.");
+            }
+            else {
+                broadcast("update_expenditures", expenditures);
+            }
+        });
+    }
 
     function remote_log(text) {
         socket.emit('remote_log', text);
