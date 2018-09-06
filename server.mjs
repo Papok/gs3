@@ -2,6 +2,7 @@
 //import * as logic from '/home/ubuntu/workspace/client/common/logic_classes.mjs';
 import * as logic from './client/common/logic_classes.mjs';
 import * as db from './db.mjs';
+import * as mdb from './mdb.mjs';
 
 import http from 'http';
 import path from 'path';
@@ -93,27 +94,28 @@ io.on('connection', function(socket) {
     socket.on('go', (username) => {
         remote_log('going')
         if (username == "papo") {
-        db.load_init_file((err, file_data) => {
-            if (err) {
-                remote_log("Error loading init data.");
-            }
-            else {
-                let init_data = JSON.parse(file_data);
-                //let data = { init_data, expenditures };
-                socket.emit('init', init_data);
-            }
-            db.load_expenditures((err, file_data) => {
+            db.load_init_file((err, file_data) => {
                 if (err) {
-                    remote_log("Error loading expenditures data.");
+                    remote_log("Error loading init data.");
                 }
                 else {
-                    expenditures = JSON.parse(file_data);
+                    let init_data = JSON.parse(file_data);
                     //let data = { init_data, expenditures };
-                    socket.emit('update_expenditures', expenditures);
+                    socket.emit('init', init_data);
                 }
+                db.load_expenditures((err, file_data) => {
+                    if (err) {
+                        remote_log("Error loading expenditures data.");
+                    }
+                    else {
+                        expenditures = JSON.parse(file_data);
+                        //let data = { init_data, expenditures };
+                        socket.emit('update_expenditures', expenditures);
+                    }
+                });
             });
-        });
-        } else {
+        }
+        else {
             remote_log("wrong username")
         }
     });
@@ -165,7 +167,7 @@ io.on('connection', function(socket) {
         remove_from_list(categories, category);
         broadcast('update_categories', categories);
     });
-    
+
     socket.on('backlog', function(msg) {
         remote_log(msg);
     });
@@ -179,6 +181,11 @@ io.on('connection', function(socket) {
                 broadcast("update_expenditures", expenditures);
             }
         });
+        mdb.save_expenditures(expenditures, (err) => {
+            if (err) {
+                remote_log("Error accessing expenditure file (mdb).");
+            }
+        })
     }
 
     function remote_log(text) {

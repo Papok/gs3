@@ -243,7 +243,7 @@ class div extends active_html_base {
 }
 
 class button extends active_html_base {
-    constructor(parent, inner, extra_attributes = []) {
+    constructor(parent, inner = "", extra_attributes = []) {
         let tag = 'button';
         let attributes = new Map();
         concat_attributes(attributes, extra_attributes);
@@ -257,7 +257,8 @@ class button extends active_html_base {
     }
 
     set_text(text) {
-        this.inner[0].set_inner(text);
+        //this.inner[0].set_inner(text);
+        this.inner[0] = text;
         this.text = text;
     }
 }

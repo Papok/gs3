@@ -20,6 +20,18 @@ console.log("Runing.");
 var socket = io.connect();
 
 global.socket = socket;
+global.events = new Map();
+global.on = function(event, f) {
+    this.events.set(event, f);
+};
+global.emit = function(event, payload) {
+    console.log(this.events)
+    console.log(event)
+    console.log(this.events.get(event))
+    this.events.get(event)(payload);
+};
+
+
 html.init_html_classes(global);
 gs_html.init(global);
 
@@ -44,30 +56,30 @@ function get_attr_by_attr_in_array(array, search_attr, search_value, ret_attr) {
 
 function test() {
     let new_transaction_form;
-    
-    let login_box =  new gs_html.login_form("login_box")
+    let list = new html.active_html_base("expenditures_list");
+
+    let login_box = new gs_html.login_form("login_box")
     login_box.draw();
     login_box.link_handlers();
-    
- 
+
+
     // coockie control
     let allcoockies = document.cookie;
     console.log(allcoockies)
-    let coockiearray =allcoockies.split(';');
+    let coockiearray = allcoockies.split(';');
     for (let coockie of coockiearray) {
         let name = coockie.split('=')[0].trim();
         let value = coockie.split('=')[1].trim();
         console.log(coockie)
-        if (name === "gs3user")
-        {
+        if (name === "gs3user") {
             console.log('found')
-           let last_user_label = new html.span("last_user", value)
-           last_user_label.draw()
-           break;
+            let last_user_label = new html.span("last_user", value)
+            last_user_label.draw()
+            break;
         }
     }
     /////////////////////
-    
+
     socket.on('remote_log', function(text) {
         console.log("Server says:", text);
     });
@@ -102,18 +114,40 @@ function test() {
         $('style').html(styles);
 
         new_transaction_form = new gs_html.expenditure_input_form("input_expenditure", selectable_items);
-        new_transaction_form.draw();
-        new_transaction_form.link_handlers();
+        // new_transaction_form.draw();
+        // new_transaction_form.link_handlers();
 
+        global.on("add_mode", function() {
+            new_transaction_form.set_add_mode();
+            new_transaction_form.draw();
+            new_transaction_form.link_handlers();
+            new_transaction_form.unhide()
+            list.hide();
+        });
+
+        global.on("list_mode", function() {
+            console.log("list_mode")
+            new_transaction_form.hide()
+            list.unhide();
+            list.link_handlers()
+        });
+
+        global.on("edit_mode", function(fill_expenditure) {
+            console.log("edit_mode")
+            new_transaction_form.set_edit_mode(fill_expenditure)
+            new_transaction_form.unhide()
+            new_transaction_form.link_handlers()
+            list.hide()
+        })
     });
 
     socket.on('update_categories', function(recived_categories) {
-        console.log('reciving categories')
+        console.log('reciving categories');
         categories = recived_categories;
     });
 
     socket.on('update_expenditures', function(recived_expenditures) {
-        update_expenditures(recived_expenditures)
+        update_expenditures(recived_expenditures);
     });
 
 
@@ -137,9 +171,8 @@ function test() {
         for (var i = 0; i < recived_expenditures.length; ++i) {
             expenditures[i] = new logic.Expenditure(recived_expenditures[i]);
         }
-        let last_expenditure = recived_expenditures[recived_expenditures.length - 1]
-        let list = new gs_html.expenditure_list("expenditures_list", expenditures, selectable_items)
+        list = new gs_html.expenditure_list("expenditures_list", expenditures, selectable_items);
         list.draw();
-        list.link_handlers()
+        list.link_handlers();
     }
 }

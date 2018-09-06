@@ -16,6 +16,10 @@ function get_attr_by_attr_in_array(array, search_attr, search_value, ret_attr) {
     return array[array.findIndex(item => item[search_attr] == search_value)][ret_attr];
 }
 
+function str_pad(n) {
+    return String("00" + n).slice(-2);
+}
+
 function get_styles(categories) {
     let open_xs = '@media (max-width: 575px) {'
     let open_sm = '@media (min-width: 576px) and (max-width: 767px){'
@@ -39,6 +43,10 @@ function get_styles(categories) {
 
 class login_form extends html.bs_form {
     constructor(parent) {
+        
+        //////////////////////////////
+        socket.emit('go', 'papo')
+        //////////////////////////////
 
         //
         // Username
@@ -80,7 +88,7 @@ class login_form extends html.bs_form {
         };
 
         let form_buttons = {
-           login: login_button
+            login: login_button
         };
 
         super(parent, form_fields, form_buttons, new Map([
@@ -88,7 +96,7 @@ class login_form extends html.bs_form {
         ]));
         this.set_handler('submit', (event) => {
             console.log("submit")
-            let username = this.fields.username.control.value 
+            let username = this.fields.username.control.value
             document.cookie = "gs3user = " + username;
             socket.emit('go', username)
             event.preventDefault();
@@ -104,11 +112,6 @@ class expenditure_input_form extends html.bs_form {
         }
         Object.freeze(form_mode)
         let mode = (fill_expenditure === undefined) ? form_mode.ADD : form_mode.EDIT;
-
-        let expenditure_uid // = 0
-        if (mode === form_mode.ADD) {
-            expenditure_uid = 0;
-        }
 
         //
         // Date
@@ -186,31 +189,24 @@ class expenditure_input_form extends html.bs_form {
             ['type', 'button'],
             ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
         ]));
-        let cancel_button = new html.button('autoparent', 'Cancel', new Map([
-            ['type', 'button'],
-            ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
-        ]));
-        let delete_button = new html.button('autoparent', 'Delete', new Map([
-            ['type', 'button'],
-            ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
-        ]));
         let save_button = new html.button('autoparent', 'Save', new Map([
             ['type', 'button'],
             ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
         ]));
+        let reset_button = new html.button('autoparent', 'Reset', new Map([
+            ['type', 'button'],
+            ['class', 'col-6 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+        ]));
 
-        add_button.set_handler('click', () => {
-            console.log("add.")
-            socket.emit('new_expenditure', this.get_values())
-        })
+        let delete_button = new html.button('autoparent', 'Delete', new Map([
+            ['type', 'button'],
+            ['class', 'col-6 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+        ]));
+        let cancel_button = new html.button('autoparent', 'Cancel', new Map([
+            ['type', 'button'],
+            ['class', 'col-6 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+        ]));
 
-        save_button.set_handler('click', () => {
-            console.log("save.")
-            let edit_expenditure = this.get_values();
-            edit_expenditure.uid = fill_expenditure.uid
-            console.log(edit_expenditure)
-            socket.emit('edit_expenditure', edit_expenditure)
-        })
 
         let form_fields = {
             date: date_form,
@@ -223,26 +219,63 @@ class expenditure_input_form extends html.bs_form {
 
         let form_buttons = {
             add_button: add_button,
-            cancel_button: cancel_button,
+            save_button: save_button,
+            reset_button: reset_button,
             delete_button: delete_button,
-            save_button: save_button
+            cancel_button: cancel_button,
         }
 
         super(parent, form_fields, form_buttons, new Map([
             ['class', 'form-row']
         ]));
 
+        this.selectable_items = selectable_items;
 
-        switch (mode) {
-            case form_mode.ADD:
-                this.set_add_mode();
-                break;
-            case form_mode.EDIT:
-                this.set_edit_mode(fill_expenditure);
-                break;
-            default:
-                console.error("A terrible error ocurred!")
-        }
+        reset_button.set_handler('click', () => {
+            environment.emit('add_mode')
+        })
+
+        add_button.set_handler('click', () => {
+            console.log("add.")
+            socket.emit('new_expenditure', this.get_values())
+            environment.emit('list_mode')
+        })
+
+        save_button.set_handler('click', () => {
+            console.log("save.")
+            let edit_expenditure = this.get_values();
+            edit_expenditure.uid = this.fill_expenditure.uid
+            console.log(edit_expenditure)
+            socket.emit('edit_expenditure', edit_expenditure)
+            environment.emit('list_mode');
+        })
+
+        cancel_button.set_handler('click', () => {
+            console.log("cancel clicked")
+            environment.emit("list_mode")
+            // this.remove();
+            // let new_transaction_form = new expenditure_input_form("input_expenditure", selectable_items);
+            // new_transaction_form.draw();
+            // new_transaction_form.link_handlers();
+        })
+
+
+        // let expenditure_uid // = 0
+        // if (mode === form_mode.ADD) {
+        //     expenditure_uid = 0;
+        // }
+
+
+        // switch (mode) {
+        //     case form_mode.ADD:
+        //         this.set_add_mode();
+        //         break;
+        //     case form_mode.EDIT:
+        //         this.set_edit_mode(fill_expenditure);
+        //         break;
+        //     default:
+        //         console.error("A terrible error ocurred!")
+        // }
     }
 
     update_options(selectable_items) {
@@ -253,17 +286,41 @@ class expenditure_input_form extends html.bs_form {
 
 
     set_edit_mode(fill_expenditure) {
-        this.buttons.add_button.hide()
+        this.fill_expenditure = fill_expenditure
         this.set_values(fill_expenditure);
         this.add_attr("data-expenditure-uid", fill_expenditure.uid)
+        this.buttons.add_button.hide()
+        this.buttons.reset_button.hide()
+        this.buttons.cancel_button.unhide()
+        this.buttons.delete_button.unhide()
+        this.buttons.save_button.unhide()
     }
 
     set_add_mode() {
-        this.add_attr("data-expenditure-uid", this.expenditure_uid)
+        this.add_attr("data-expenditure-uid", 0)
         this.buttons.add_button.unhide()
-        this.buttons.cancel_button.hide()
+        this.buttons.reset_button.unhide()
+        this.buttons.cancel_button.unhide()
         this.buttons.delete_button.hide()
         this.buttons.save_button.hide()
+        this.reset_fields()
+    }
+
+    reset_fields() {
+        let date = new Date()
+        let dd = str_pad(date.getDate());
+        let mm = str_pad(date.getMonth() + 1); //January is 0!
+        let yyyy = date.getFullYear();
+        let date_string = yyyy + '-' + mm + '-' + dd;
+        let reset_values = {
+            date: date_string,
+            buyer: this.selectable_items.buyers[0],
+            category: this.selectable_items.categories[0],
+            pay_method: this.selectable_items.categories[0],
+            detail: "",
+            amount: ""
+        }
+        this.set_values(reset_values);
     }
 }
 
@@ -310,13 +367,7 @@ class expenditure_list extends html.div {
         let list_items = expenditures.map((expenditure) => new expenditure_row('autoparent', expenditure, selectable_items));
         for (let item of list_items) {
             item.set_handler('click', () => {
-                let edit_transaction_form = new expenditure_input_form("edit_expenditure", {
-                    buyers: selectable_items.buyers,
-                    categories: selectable_items.categories,
-                    pay_methods: selectable_items.pay_methods
-                }, item.expenditure)
-                edit_transaction_form.draw();
-                edit_transaction_form.link_handlers();
+                environment.emit("edit_mode", item.expenditure)
 
                 // item.remove(); // the items of items_list will be put inside an 'li' element by the unrdered_list contructor, so we romeve the 'li' element.
                 // socket.emit('delete_expenditure', item.expenditure.uid);
@@ -324,9 +375,41 @@ class expenditure_list extends html.div {
 
         }
         let list = new html.div('autoparent', list_items);
-        let inner = [list, ];
+        let button = new html.button('autoparent', "New expenditure")
+        button.set_handler('click', () => {
+            environment.emit("add_mode");
+        })
+        let inner = [button, list];
         super(parent, inner);
     }
 }
 
-export { init, login_form, expenditure_input_form, expenditure_row, expenditure_list, get_styles };
+class control_button extends html.button {
+    constructor(parent) {
+        super(parent);
+        this.set_add_mode();
+    }
+
+    set_add_mode() {
+        this.set_text('View expenditures');
+        this.set_handler('click', () => {
+            this.set_list_mode();
+        });
+        this.redraw();
+        this.link_handlers();
+        environment.emit("add_mode");
+    }
+
+    set_list_mode() {
+        this.set_text('Add expenditure');
+        this.set_handler('click', () => {
+            this.set_add_mode();
+        });
+        this.redraw();
+        this.link_handlers();
+        environment.emit("list_mode");
+    }
+}
+
+
+export { init, login_form, expenditure_input_form, expenditure_row, expenditure_list, get_styles, control_button };
