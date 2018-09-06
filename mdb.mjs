@@ -64,7 +64,29 @@ function save_expenditures(expenditures, f) {
     });
 }
 
-export { save_expenditures };
+function load_expenditures(f) {
+    MongoClient.connect(url, function(err, client) {
+        if (err) {
+            console.log("Error connecting to database.");
+            console.log(err);
+            f(err);
+            return;
+        }
+        let db = client.db('hgs3d');
+        let expenditures_collection = db.collection('expenditures');
+        expenditures_collection.find().toArray(function(err, docs) {
+            if (err) {
+                console.log("Error retriving from database.");
+                console.log(err);
+                f(err);
+                return
+            }
+            f(err, docs )
+        })
+    })
+}
+
+export { save_expenditures, load_expenditures };
 
 /*
 MongoClient.connect(url, function(err, client) {

@@ -68,28 +68,34 @@ io.on('connection', function(socket) {
         sockets.splice(sockets.indexOf(socket), 1);
     });
 
-    socket.on('init', () => {
-        db.load_init_file((err, file_data) => {
-            if (err) {
-                remote_log("Error loading init data.");
-            }
-            else {
-                let init_data = JSON.parse(file_data);
-                //let data = { init_data, expenditures };
-                socket.emit('init', init_data);
-            }
-            db.load_expenditures((err, file_data) => {
-                if (err) {
-                    remote_log("Error loading expenditures data.");
-                }
-                else {
-                    expenditures = JSON.parse(file_data);
-                    //let data = { init_data, expenditures };
-                    socket.emit('update_expenditures', expenditures);
-                }
-            });
-        });
-    });
+    // socket.on('init', () => {
+    //     db.load_init_file((err, file_data) => {
+    //         if (err) {
+    //             remote_log("Error loading init data.");
+    //         }
+    //         else {
+    //             let init_data = JSON.parse(file_data);
+    //             //let data = { init_data, expenditures };
+    //             socket.emit('init', init_data);
+    //         }
+    //         db.load_expenditures((err, file_data) => {
+    //             if (err) {
+    //                 remote_log("Error loading expenditures data.");
+    //             }
+    //             else {
+    //                 expenditures = JSON.parse(file_data);
+    //                 //let data = { init_data, expenditures };
+    //                 socket.emit('update_expenditures', expenditures);
+    //             }
+    //         });
+    //         console.log("pre");
+    //         mdb.load_expenditures((err, data) => {
+    //             console.log(err);
+    //             console.log(data);
+    //         });
+
+    //     });
+    // });
 
     socket.on('go', (username) => {
         remote_log('going')
@@ -100,24 +106,20 @@ io.on('connection', function(socket) {
                 }
                 else {
                     let init_data = JSON.parse(file_data);
-                    //let data = { init_data, expenditures };
                     socket.emit('init', init_data);
                 }
-                db.load_expenditures((err, file_data) => {
+                mdb.load_expenditures((err, data) => {
                     if (err) {
                         remote_log("Error loading expenditures data.");
-                        socket.emit('update_expenditures', [])
                     }
                     else {
-                        expenditures = JSON.parse(file_data);
-                        //let data = { init_data, expenditures };
-                        socket.emit('update_expenditures', expenditures);
+                        socket.emit('update_expenditures', data);
                     }
                 });
             });
         }
         else {
-            remote_log("wrong username")
+            remote_log("wrong username");
         }
     });
 
@@ -153,6 +155,8 @@ io.on('connection', function(socket) {
             remote_log("Error trying to delete expenditure.");
             console.log(expenditure_uid)
         }
+
+        ////// cambiar a mdb!!
         db.save_expenditures(expenditures, (err) => {
             if (err) {
                 remote_log("Error accessing expenditure file.");
@@ -174,17 +178,20 @@ io.on('connection', function(socket) {
     });
 
     function save_expenditures() {
-        db.save_expenditures(expenditures, (err) => {
-            if (err) {
-                remote_log("Error accessing expenditure file.");
-            }
-            else {
-                broadcast("update_expenditures", expenditures);
-            }
-        });
+        // db.save_expenditures(expenditures, (err) => {
+        //     if (err) {
+        //         remote_log("Error accessing expenditure file.");
+        //     }
+        //     else {
+        //         broadcast("update_expenditures", expenditures);
+        //     }
+        // });
         mdb.save_expenditures(expenditures, (err) => {
             if (err) {
                 remote_log("Error accessing expenditure file (mdb).");
+            }
+            else {
+                broadcast("update_expenditures", expenditures);
             }
         })
     }
