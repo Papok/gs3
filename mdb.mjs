@@ -43,7 +43,6 @@ function save_expenditures(expenditures, f) {
                 f(err);
                 return;
             }
-            console.log(expenditures)
             expenditures_collection.insert(expenditures, function(err, result) {
                 if (err) {
                     console.log("Error saving expenditures.");

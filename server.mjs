@@ -106,6 +106,7 @@ io.on('connection', function(socket) {
                 db.load_expenditures((err, file_data) => {
                     if (err) {
                         remote_log("Error loading expenditures data.");
+                        socket.emit('update_expenditures', [])
                     }
                     else {
                         expenditures = JSON.parse(file_data);
