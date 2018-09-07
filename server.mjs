@@ -113,7 +113,8 @@ io.on('connection', function(socket) {
                         remote_log("Error loading expenditures data.");
                     }
                     else {
-                        socket.emit('update_expenditures', data);
+                        expenditures = data;
+                        socket.emit('update_expenditures', expenditures);
                     }
                 });
             });
