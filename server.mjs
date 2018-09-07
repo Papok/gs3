@@ -107,6 +107,11 @@ io.on('connection', function(socket) {
                 else {
                     let init_data = JSON.parse(file_data);
                     socket.emit('init', init_data);
+                    // mdb.watch(function(err){
+                    //     if (err) {
+                    //         console.log("Error setting watch");
+                    //     }
+                    // });
                 }
                 mdb.load_expenditures((err, data) => {
                     if (err) {
@@ -123,6 +128,10 @@ io.on('connection', function(socket) {
             remote_log("wrong username");
         }
     });
+
+    socket.on('load_expenditures', function() {
+        load_expenditures();
+    })
 
     socket.on('update_categories', function() {
         remote_log('sending categories');
@@ -156,17 +165,18 @@ io.on('connection', function(socket) {
             remote_log("Error trying to delete expenditure.");
             console.log(expenditure_uid)
         }
-
+        save_expenditures();
+        
         ////// cambiar a mdb!!
-        db.save_expenditures(expenditures, (err) => {
-            if (err) {
-                remote_log("Error accessing expenditure file.");
-                remote_log(JSON.stringify(err));
-            }
-            else {
-                broadcast("update_expenditures", expenditures);
-            }
-        });
+        // mdb.save_expenditures(expenditures, (err) => {
+        //     if (err) {
+        //         remote_log("Error accessing expenditure file.");
+        //         remote_log(JSON.stringify(err));
+        //     }
+        //     else {
+        //         broadcast("update_expenditures", expenditures);
+        //     }
+        // });
     });
 
     socket.on('delete_category', function(category) {
@@ -177,6 +187,18 @@ io.on('connection', function(socket) {
     socket.on('backlog', function(msg) {
         remote_log(msg);
     });
+
+    function load_expenditures() {
+        mdb.load_expenditures((err, data) => {
+            if (err) {
+                remote_log("Error loading expenditures data.");
+            }
+            else {
+                expenditures = data;
+                socket.emit('update_expenditures', expenditures);
+            }
+        });
+    }
 
     function save_expenditures() {
         // db.save_expenditures(expenditures, (err) => {

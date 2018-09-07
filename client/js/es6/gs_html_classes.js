@@ -249,14 +249,23 @@ class expenditure_input_form extends html.bs_form {
             socket.emit('edit_expenditure', edit_expenditure)
             environment.emit('list_mode');
         })
+        
+        delete_button.set_handler('click', () => {
+            console.log(this)
+            let delete_line = confirm("Do you want to delete this line?");
+            if (delete_line) {
+                console.log("Delete!");
+                socket.emit('delete_expenditure', this.fill_expenditure.uid);
+                environment.emit('list_mode')
+            } else {
+                console.lg("No! Wait..");
+            }
+        });
 
         cancel_button.set_handler('click', () => {
             console.log("cancel clicked")
             environment.emit("list_mode")
-            // this.remove();
-            // let new_transaction_form = new expenditure_input_form("input_expenditure", selectable_items);
-            // new_transaction_form.draw();
-            // new_transaction_form.link_handlers();
+
         })
 
 

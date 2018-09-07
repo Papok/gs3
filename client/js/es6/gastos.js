@@ -128,6 +128,7 @@ function test() {
         global.on("list_mode", function() {
             console.log("list_mode")
             new_transaction_form.hide()
+            socket.emit('load_expenditures')
             list.unhide();
             list.link_handlers()
         });

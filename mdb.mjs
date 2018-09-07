@@ -4,26 +4,25 @@ let dbuser = 'c9';
 let dbpassword = 'c9c9c9';
 let url = `mongodb://${dbuser}:${dbpassword}@ds111492.mlab.com:11492/hgs3d`;
 
-let seedData = [{
-        decade: '1970s',
-        artist: 'Debby Boone',
-        song: 'You Light Up My Life',
-        weeksAtOne: 10
-    },
-    {
-        decade: '1980s',
-        artist: 'Olivia Newton-John',
-        song: 'Physical',
-        weeksAtOne: 10
-    },
-    {
-        decade: '1990s',
-        artist: 'Mariah Carey',
-        song: 'One Sweet Day',
-        weeksAtOne: 16
-    }
-];
-
+function watch(f) {
+    MongoClient.connect(url, function(err, client) {
+        if (err) {
+            console.log("Error connecting to database. [watch]");
+            console.log(err);
+        }
+        else {
+            let db = client.db('hgs3d');
+            let expenditures_collection = db.collection('expenditures');
+            let change_stream = expenditures_collection.watch([{
+                $project: { documentKey: false }
+            }]);
+            change_stream.on("change", function(change) {
+                console.log(change);
+            });
+        }
+        f(err);
+    });
+}
 
 
 function save_expenditures(expenditures, f) {
@@ -81,12 +80,12 @@ function load_expenditures(f) {
                 f(err);
                 return
             }
-            f(err, docs )
+            f(err, docs)
         })
     })
 }
 
-export { save_expenditures, load_expenditures };
+export { watch, save_expenditures, load_expenditures };
 
 /*
 MongoClient.connect(url, function(err, client) {
