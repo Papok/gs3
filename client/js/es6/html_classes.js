@@ -315,15 +315,6 @@ class select extends active_html_base {
 
     draw() {
         super.draw();
-        // let selector = this.selector + ' option[value="' + this._value + '"]'
-        // console.log(selector)
-        // console.log($(selector))
-        // console.log($(selector).html())
-        // $(selector).prop('selected', 'selected')
-        // //this.add_attr('value', this._value)
-        // $(selector).prop('data-test',this._value)
-        // $(selector).html('---')
-        // console.log($(selector).html())
         $(this.selector).val(this._value).trigger('change', true);
     }
 

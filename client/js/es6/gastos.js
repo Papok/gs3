@@ -25,9 +25,6 @@ global.on = function(event, f) {
     this.events.set(event, f);
 };
 global.emit = function(event, payload) {
-    console.log(this.events)
-    console.log(event)
-    console.log(this.events.get(event))
     this.events.get(event)(payload);
 };
 
@@ -52,6 +49,16 @@ $(document).ready(function() {
 
 function get_attr_by_attr_in_array(array, search_attr, search_value, ret_attr) {
     return array[array.findIndex(item => item[search_attr] == search_value)][ret_attr];
+}
+
+function remove_from_list(list, element) {
+    var index = list.indexOf(element);
+    if (index > -1) {
+        list.splice(index, 1);
+    }
+    else {
+        console.log("ERROR: Element not found in index.");
+    }
 }
 
 function test() {
@@ -121,25 +128,42 @@ function test() {
             new_transaction_form.set_add_mode();
             new_transaction_form.draw();
             new_transaction_form.link_handlers();
-            new_transaction_form.unhide()
-            list.hide();
+            new_transaction_form.unhide(),
+                list.hide();
         });
 
         global.on("list_mode", function() {
-            console.log("list_mode")
-            new_transaction_form.hide()
-            socket.emit('load_expenditures')
+            new_transaction_form.hide();
+            socket.emit('load_expenditures');
             list.unhide();
-            list.link_handlers()
+            list.link_handlers();
         });
 
         global.on("edit_mode", function(fill_expenditure) {
-            console.log("edit_mode")
-            new_transaction_form.set_edit_mode(fill_expenditure)
-            new_transaction_form.unhide()
-            new_transaction_form.link_handlers()
-            list.hide()
-        })
+            new_transaction_form.set_edit_mode(fill_expenditure);
+            new_transaction_form.unhide();
+            new_transaction_form.link_handlers();
+            list.hide();
+        });
+
+        global.on('add_expenditure', function(expenditure) {
+            expenditures.push(expenditure).expenditure;
+            socket.emit('add_expenditure', expenditure);
+            update_expenditures(expenditures);
+        });
+
+        global.on('delete_expenditure', function(expenditure) {
+            remove_from_list(expenditures, expenditure);
+            socket.emit('delete_expenditure', expenditure.uid);
+            update_expenditures(expenditures);
+        });
+
+        global.on('edit_expenditure', function(expenditure) {
+            let edit_expenditure_idx = expenditures.findIndex(item => item.uid === expenditure.uid);
+            expenditures[edit_expenditure_idx] = expenditure;
+            socket.emit('edit_expenditure', expenditure);
+            update_expenditures(expenditures);
+        });
     });
 
     socket.on('update_categories', function(recived_categories) {

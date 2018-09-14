@@ -20,6 +20,16 @@ function str_pad(n) {
     return String("00" + n).slice(-2);
 }
 
+function remove_from_list(list, element) {
+    var index = list.indexOf(element);
+    if (index > -1) {
+        list.splice(index, 1);
+    }
+    else {
+        console.log("ERROR: Element not found in index.");
+    }
+}
+
 function get_styles(categories) {
     let open_xs = '@media (max-width: 575px) {'
     let open_sm = '@media (min-width: 576px) and (max-width: 767px){'
@@ -43,7 +53,7 @@ function get_styles(categories) {
 
 class login_form extends html.bs_form {
     constructor(parent) {
-        
+
         //////////////////////////////
         socket.emit('go', 'papo')
         //////////////////////////////
@@ -223,7 +233,7 @@ class expenditure_input_form extends html.bs_form {
             reset_button: reset_button,
             delete_button: delete_button,
             cancel_button: cancel_button,
-        }
+        };
 
         super(parent, form_fields, form_buttons, new Map([
             ['class', 'form-row']
@@ -232,59 +242,31 @@ class expenditure_input_form extends html.bs_form {
         this.selectable_items = selectable_items;
 
         reset_button.set_handler('click', () => {
-            environment.emit('add_mode')
-        })
+            environment.emit('add_mode');
+        });
 
         add_button.set_handler('click', () => {
-            console.log("add.")
-            socket.emit('new_expenditure', this.get_values())
-            environment.emit('list_mode')
-        })
+            environment.emit('add_expenditure', this.get_values());
+            environment.emit('list_mode');
+        });
 
         save_button.set_handler('click', () => {
-            console.log("save.")
             let edit_expenditure = this.get_values();
-            edit_expenditure.uid = this.fill_expenditure.uid
-            console.log(edit_expenditure)
-            socket.emit('edit_expenditure', edit_expenditure)
+            edit_expenditure.uid = this.fill_expenditure.uid;
+            environment.emit('edit_expenditure', edit_expenditure);
             environment.emit('list_mode');
-        })
-        
+        });
+
         delete_button.set_handler('click', () => {
-            console.log(this)
-            let delete_line = confirm("Do you want to delete this line?");
-            if (delete_line) {
-                console.log("Delete!");
-                socket.emit('delete_expenditure', this.fill_expenditure.uid);
-                environment.emit('list_mode')
-            } else {
-                console.lg("No! Wait..");
+            if (confirm("Do you want to delete this line?")) {
+                environment.emit('delete_expenditure', this.fill_expenditure);
+                environment.emit('list_mode');
             }
         });
 
         cancel_button.set_handler('click', () => {
-            console.log("cancel clicked")
-            environment.emit("list_mode")
-
-        })
-
-
-        // let expenditure_uid // = 0
-        // if (mode === form_mode.ADD) {
-        //     expenditure_uid = 0;
-        // }
-
-
-        // switch (mode) {
-        //     case form_mode.ADD:
-        //         this.set_add_mode();
-        //         break;
-        //     case form_mode.EDIT:
-        //         this.set_edit_mode(fill_expenditure);
-        //         break;
-        //     default:
-        //         console.error("A terrible error ocurred!")
-        // }
+            environment.emit("list_mode");
+        });
     }
 
     update_options(selectable_items) {
@@ -354,6 +336,7 @@ class expenditure_row extends html.bs_row {
         let category_class = `cl${expenditure.category}`;
         super(parent, elements, col_desc, [
             ["class", category_class],
+            ["data-expenditure-uid", expenditure.uid]
         ]);
         this.expenditure = expenditure;
         this.selectable_items = selectable_items;
@@ -377,11 +360,7 @@ class expenditure_list extends html.div {
         for (let item of list_items) {
             item.set_handler('click', () => {
                 environment.emit("edit_mode", item.expenditure)
-
-                // item.remove(); // the items of items_list will be put inside an 'li' element by the unrdered_list contructor, so we romeve the 'li' element.
-                // socket.emit('delete_expenditure', item.expenditure.uid);
             });
-
         }
         let list = new html.div('autoparent', list_items);
         let button = new html.button('autoparent', "New expenditure")
@@ -390,6 +369,7 @@ class expenditure_list extends html.div {
         })
         let inner = [button, list];
         super(parent, inner);
+        this.selectable_items = selectable_items;
     }
 }
 

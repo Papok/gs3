@@ -129,7 +129,7 @@ io.on('connection', function(socket) {
         }
     });
 
-    socket.on('load_expenditures', function() {
+    socket.on('º', function() {
         load_expenditures();
     })
 
@@ -143,9 +143,12 @@ io.on('connection', function(socket) {
         broadcast('update_categories', categories);
     });
 
-    socket.on('new_expenditure', function(expenditure) {
+    socket.on('add_expenditure', function(expenditure) {
+        console.log("Adding", expenditure)
+        console.log("To", expenditures)
         let new_expenditure = new logic.Expenditure(expenditure);
         expenditures.push(new_expenditure);
+        console.log("Resulting in", expenditures)
         save_expenditures()
     });
 
@@ -157,26 +160,17 @@ io.on('connection', function(socket) {
     })
 
     socket.on('delete_expenditure', function(expenditure_uid) {
+        console.log("Deleting", expenditure_uid)
+        console.log("From", expenditures)
         let idx = expenditures.findIndex(expenditure => expenditure.uid === expenditure_uid);
         if (idx > -1) {
             expenditures.splice(idx, 1);
         }
         else {
             remote_log("Error trying to delete expenditure.");
-            console.log(expenditure_uid)
+            console.log("error deleting", expenditure_uid)
         }
         save_expenditures();
-        
-        ////// cambiar a mdb!!
-        // mdb.save_expenditures(expenditures, (err) => {
-        //     if (err) {
-        //         remote_log("Error accessing expenditure file.");
-        //         remote_log(JSON.stringify(err));
-        //     }
-        //     else {
-        //         broadcast("update_expenditures", expenditures);
-        //     }
-        // });
     });
 
     socket.on('delete_category', function(category) {
@@ -201,20 +195,14 @@ io.on('connection', function(socket) {
     }
 
     function save_expenditures() {
-        // db.save_expenditures(expenditures, (err) => {
-        //     if (err) {
-        //         remote_log("Error accessing expenditure file.");
-        //     }
-        //     else {
-        //         broadcast("update_expenditures", expenditures);
-        //     }
-        // });
+        console.log("Saving_s", expenditures.length)
         mdb.save_expenditures(expenditures, (err) => {
             if (err) {
                 remote_log("Error accessing expenditure file (mdb).");
             }
             else {
                 broadcast("update_expenditures", expenditures);
+                console.log("broadcasting", expenditures)
             }
         })
     }

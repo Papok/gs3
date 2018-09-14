@@ -26,6 +26,7 @@ function watch(f) {
 
 
 function save_expenditures(expenditures, f) {
+    console.log("Saving", expenditures.length)
     MongoClient.connect(url, function(err, client) {
         if (err) {
             console.log("Error connecting to database.");
