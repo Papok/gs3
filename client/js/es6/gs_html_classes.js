@@ -298,13 +298,13 @@ class expenditure_input_form extends html.bs_form {
     }
 
     reset_fields() {
-        let date = new Date()
+        let date = new Date();
         let dd = str_pad(date.getDate());
         let mm = str_pad(date.getMonth() + 1); //January is 0!
         let yyyy = date.getFullYear();
         let date_string = yyyy + '-' + mm + '-' + dd;
         let reset_values = {
-            date: date_string,
+            date: date,//_string,
             buyer: this.selectable_items.buyers[0],
             category: this.selectable_items.categories[0],
             pay_method: this.selectable_items.categories[0],
@@ -313,6 +313,12 @@ class expenditure_input_form extends html.bs_form {
         }
         this.set_values(reset_values);
     }
+    
+    // get_values() {
+    //     let values = super.get_values();
+    //     console.log(values)
+    //     return values;
+    // }
 }
 
 class expenditure_row extends html.bs_row {

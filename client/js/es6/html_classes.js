@@ -329,7 +329,7 @@ class select extends active_html_base {
     }
 
     _update_options(options = [new logic.rich_option_item()]) { // esto da error porque en ningun momento importo esta clase, aunque no debería llegar a la instancia donde no se provee "options"
-        this._value = (this._value === 0)? options[0]._value : this._value
+        this._value = (this._value === 0) ? options[0]._value : this._value
         this.inner = [];
         for (let option of options) {
             this._add_option(option);
@@ -390,7 +390,7 @@ class rich_select extends select {
             ['style', background_color_set_string]
         ]);
         super._add_option(new_option)
-        
+
     }
 
     // update_options(options = [new logic.rich_option_item()]) {
@@ -486,6 +486,24 @@ class date_input extends input {
         ]);
         concat_attributes(attributes, extra_attributes);
         super(parent, attributes);
+    }
+
+    get value() {
+        let date = new Date($(this.selector).val())
+        console.log(date.getTime())
+        var offset_ms = new Date().getTimezoneOffset() * 60000;
+        console.log(offset_ms)
+        console.log(date.getTimezoneOffset())
+        let time = date.getTime() + offset_ms;
+        console.log(new Date(time).getTime())
+        return time;
+    }
+
+    set value(_value) {
+        let date = new Date(_value)
+        let date_string = date.getFullYear() + '-' + str_pad(date.getMonth() + 1) + '-' + str_pad(date.getDate())
+        console.log(date_string)
+        super.value = date_string;
     }
 }
 
