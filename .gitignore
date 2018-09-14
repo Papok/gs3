@@ -64,3 +64,6 @@ typings/
 steps
 #init_data.json
 transactions.json
+
+# the presence of the file indicates development environmet
+devenviro

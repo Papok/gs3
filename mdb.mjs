@@ -1,8 +1,11 @@
 import MongoClient from 'mongodb'
+import fs from 'fs'
 
 let dbuser = 'c9';
 let dbpassword = 'c9c9c9';
 let url = `mongodb://${dbuser}:${dbpassword}@ds111492.mlab.com:11492/hgs3d`;
+
+let my_collection_name = (fs.existsSync("devenviro"))? 'expenditures_dev' : 'expenditures'
 
 function watch(f) {
     MongoClient.connect(url, function(err, client) {
@@ -12,7 +15,7 @@ function watch(f) {
         }
         else {
             let db = client.db('hgs3d');
-            let expenditures_collection = db.collection('expenditures');
+            let expenditures_collection = db.collection(my_collection_name);
             let change_stream = expenditures_collection.watch([{
                 $project: { documentKey: false }
             }]);
@@ -35,7 +38,7 @@ function save_expenditures(expenditures, f) {
             return;
         }
         let db = client.db('hgs3d');
-        let expenditures_collection = db.collection('expenditures');
+        let expenditures_collection = db.collection(my_collection_name);
         expenditures_collection.drop(function(err) {
             if (err && err.code !== 26) {
                 console.log("Error dropping expenditures.");
@@ -73,7 +76,7 @@ function load_expenditures(f) {
             return;
         }
         let db = client.db('hgs3d');
-        let expenditures_collection = db.collection('expenditures');
+        let expenditures_collection = db.collection(my_collection_name);
         expenditures_collection.find().toArray(function(err, docs) {
             if (err) {
                 console.log("Error retriving from database.");
@@ -88,34 +91,4 @@ function load_expenditures(f) {
 
 export { watch, save_expenditures, load_expenditures };
 
-/*
-MongoClient.connect(url, function(err, client) {
-    if (err) throw err;
-    let db = client.db('hgs3d');
-    let songs = db.collection('songs');
 
-    console.log(db)
-
-    console.log(songs)
-    songs.insert(seedData, function(err, result) {
-        if (err) throw err;
-
-        songs.update({ song: 'One Sweet Day' }, { $set: { artist: 'Mariah Carey ft. Boyz II Men' } },
-            function(err, result) {
-                if (err) throw err;
-                songs.find({ weeksAtOne: { $gte: 10 } }).sort({ decade: 1 }).toArray(function(err, docs) {
-                    if (err) throw err;
-                    docs.forEach(function(doc) {
-                        console.log('In the ' + doc['decade'] + ', ' + doc['song'] + ' by ' + doc['artist'] + ' tooped the charts for ' + doc['weeksAtOne'] + ' straight weeks.');
-                    });
-                    songs.drop(function(err) {
-                        if (err) throw err;
-                        client.close(function(err) {
-                            if (err) throw err;
-                        });
-                    });
-                });
-            });
-    });
-});
-*/

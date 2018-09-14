@@ -195,7 +195,7 @@ io.on('connection', function(socket) {
     }
 
     function save_expenditures() {
-        console.log("Saving_s", expenditures.length)
+        console.log("Saving_s", expenditures.length) // somehow, this line, prevents a bug where, sometimes, expenditures is looks empty inside this function... when invoqued from a cell phone request, but ot a desktop... . May be this is because this function is defined insde the socket? May be it shoukld be outside?
         mdb.save_expenditures(expenditures, (err) => {
             if (err) {
                 remote_log("Error accessing expenditure file (mdb).");
