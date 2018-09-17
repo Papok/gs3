@@ -7,16 +7,9 @@ import * as mdb from './mdb.mjs';
 import http from 'http';
 import path from 'path';
 
-import async from 'async';
 import socketio from 'socket.io';
 import express from 'express';
 
-//
-// ## SimpleServer `SimpleServer(obj)`
-//
-// Creates a new instance of SimpleServer with the following options:
-//  * `port` - The HTTP port to listen on. If `process.env.PORT` is set, _it overrides this value_.
-//
 let router = express();
 let server = http.createServer(router);
 let io = socketio.listen(server);
@@ -49,8 +42,6 @@ for (let pay_method of pay_methods_names) {
 
 
 var expenditures = [];
-var selected_category = "Super";
-
 
 console.log("--gs3--")
 router.use(express.static(path.resolve(path.resolve(), 'client')));
@@ -67,35 +58,6 @@ io.on('connection', function(socket) {
     socket.on('disconnect', function() {
         sockets.splice(sockets.indexOf(socket), 1);
     });
-
-    // socket.on('init', () => {
-    //     db.load_init_file((err, file_data) => {
-    //         if (err) {
-    //             remote_log("Error loading init data.");
-    //         }
-    //         else {
-    //             let init_data = JSON.parse(file_data);
-    //             //let data = { init_data, expenditures };
-    //             socket.emit('init', init_data);
-    //         }
-    //         db.load_expenditures((err, file_data) => {
-    //             if (err) {
-    //                 remote_log("Error loading expenditures data.");
-    //             }
-    //             else {
-    //                 expenditures = JSON.parse(file_data);
-    //                 //let data = { init_data, expenditures };
-    //                 socket.emit('update_expenditures', expenditures);
-    //             }
-    //         });
-    //         console.log("pre");
-    //         mdb.load_expenditures((err, data) => {
-    //             console.log(err);
-    //             console.log(data);
-    //         });
-
-    //     });
-    // });
 
     socket.on('go', (username) => {
         remote_log('going')
@@ -129,10 +91,6 @@ io.on('connection', function(socket) {
         }
     });
 
-    socket.on('º', function() {
-        load_expenditures();
-    })
-
     socket.on('update_categories', function() {
         remote_log('sending categories');
         socket.emit('update_categories', categories);
@@ -149,15 +107,15 @@ io.on('connection', function(socket) {
         let new_expenditure = new logic.Expenditure(expenditure);
         expenditures.push(new_expenditure);
         console.log("Resulting in", expenditures)
-        save_expenditures()
+        upsert_expenditure(new_expenditure);
     });
 
     socket.on('edit_expenditure', function(expenditure) {
-        let edit_expenditure_idx = expenditures.findIndex(item => item.uid === expenditure.uid)
+        let edit_expenditure_idx = expenditures.findIndex(item => item.uid === expenditure.uid);
         let edit_expenditure = new logic.Expenditure(expenditure);
         expenditures[edit_expenditure_idx] = edit_expenditure;
-        save_expenditures()
-    })
+        upsert_expenditure(expenditure);
+    });
 
     socket.on('delete_expenditure', function(expenditure_uid) {
         console.log("Deleting", expenditure_uid)
@@ -170,7 +128,7 @@ io.on('connection', function(socket) {
             remote_log("Error trying to delete expenditure.");
             console.log("error deleting", expenditure_uid)
         }
-        save_expenditures();
+        delete_expenditure(expenditure_uid);
     });
 
     socket.on('delete_category', function(category) {
@@ -194,24 +152,50 @@ io.on('connection', function(socket) {
         });
     }
 
-    function save_expenditures() {
-        console.log("Saving_s", expenditures.length) // somehow, this line, prevents a bug where, sometimes, expenditures is looks empty inside this function... when invoqued from a cell phone request, but ot a desktop... . May be this is because this function is defined insde the socket? May be it shoukld be outside?
-        mdb.save_expenditures(expenditures, (err) => {
-            if (err) {
-                remote_log("Error accessing expenditure file (mdb).");
-            }
-            else {
-                broadcast("update_expenditures", expenditures);
-                console.log("broadcasting", expenditures)
-            }
-        })
-    }
+    // function save_expenditures() {
+    //     console.log("Saving_s", expenditures.length) // somehow, this line, prevents a bug where, sometimes, expenditures is looks empty inside this function... when invoqued from a cell phone request, but ot a desktop... . May be this is because this function is defined insde the socket? May be it shoukld be outside?
+    //     mdb.save_expenditures(expenditures, (err) => {
+    //         if (err) {
+    //             remote_log("Error accessing expenditure file (mdb).");
+    //         }
+    //         else {
+    //             broadcast("update_expenditures", expenditures);
+    //             console.log("broadcasting", expenditures)
+    //         }
+    //     })
+    // }
 
     function remote_log(text) {
         socket.emit('remote_log', text);
     }
 });
 
+
+function upsert_expenditure(expenditure) {
+    console.log("Upserting");
+    mdb.upsert_expenditure(expenditure, (err) => {
+        if (err) {
+            console.log("Error upserting expenditure file.", err);
+        }
+        else {
+            broadcast("update_expenditures", expenditures);
+            console.log("broadcasting", expenditures);
+        }
+    });
+}
+
+function delete_expenditure(expenditure_uid) {
+    console.log("Deleting");
+    mdb.delete_expenditure(expenditure_uid, (err) => {
+        if (err) {
+            console.log("Error deleting expenditure.", err);
+        }
+        else {
+            broadcast("update_expenditures", expenditures);
+            console.log("broadcasting", expenditures);
+        }
+    })
+}
 
 function broadcast(event, data) {
     sockets.forEach(function(socket) {

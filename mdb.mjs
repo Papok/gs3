@@ -5,7 +5,7 @@ let dbuser = 'c9';
 let dbpassword = 'c9c9c9';
 let url = `mongodb://${dbuser}:${dbpassword}@ds111492.mlab.com:11492/hgs3d`;
 
-let my_collection_name = (fs.existsSync("devenviro"))? 'expenditures_dev' : 'expenditures'
+let my_collection_name = (fs.existsSync("devenviro")) ? 'expenditures_dev' : 'expenditures'
 
 function watch(f) {
     MongoClient.connect(url, function(err, client) {
@@ -84,11 +84,80 @@ function load_expenditures(f) {
                 f(err);
                 return
             }
-            f(err, docs)
-        })
-    })
+            client.close(function(err) {
+                if (err) {
+                    console.log("Error closing database");
+                    console.log(err);
+                    f(err);
+                    return;
+                }
+                f(err, docs);
+            });
+        });
+    });
 }
 
-export { watch, save_expenditures, load_expenditures };
+function upsert_expenditure(expenditure, f) {
+    MongoClient.connect(url, function(err, client) {
+        if (err) {
+            console.log("Error connecting to database.");
+            console.log(err);
+            f(err);
+            return;
+        }
+        let db = client.db('hgs3d');
+        let expenditures_collection = db.collection(my_collection_name);
+        expenditures_collection.updateOne({ uid: expenditure.uid }, { $set: expenditure }, { upsert: true },
+            function(err, count, status) {
+                if (err) {
+                    console.log("Error updating database.");
+                    console.log(err);
+                    f(err);
+                    return;
+                }
+                client.close(function(err) {
+                    if (err) {
+                        console.log("Error closing database");
+                        console.log(err);
+                        f(err);
+                        return;
+                    }
+                    f(err);
+                });
+            });
+    });
+}
+
+function delete_expenditure(expenditure_uid, f) {
+    MongoClient.connect(url, function(err, client) {
+        if (err) {
+            console.log("Error connecting to database.");
+            console.log(err);
+            f(err);
+            return;
+        }
+        let db = client.db('hgs3d');
+        let expenditures_collection = db.collection(my_collection_name);
+        expenditures_collection.deleteOne({ uid: expenditure_uid },
+            function(err, count, status) {
+                if (err) {
+                    console.log("Error updating expenditure.");
+                    console.log(err);
+                    f(err);
+                    return;
+                }
+                client.close(function(err) {
+                    if (err) {
+                        console.log("Error closing database");
+                        console.log(err);
+                        f(err);
+                        return;
+                    }
+                    f(err);
+                });
+            });
+    });
+}
 
 
+export { watch, save_expenditures, load_expenditures, upsert_expenditure, delete_expenditure };
