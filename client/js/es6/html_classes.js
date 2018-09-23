@@ -489,20 +489,15 @@ class date_input extends input {
     }
 
     get value() {
-        let date = new Date($(this.selector).val())
-        console.log(date.getTime())
+        let date = new Date($(this.selector).val());
         var offset_ms = new Date().getTimezoneOffset() * 60000;
-        console.log(offset_ms)
-        console.log(date.getTimezoneOffset())
         let time = date.getTime() + offset_ms;
-        console.log(new Date(time).getTime())
         return time;
     }
 
     set value(_value) {
-        let date = new Date(_value)
-        let date_string = date.getFullYear() + '-' + str_pad(date.getMonth() + 1) + '-' + str_pad(date.getDate())
-        console.log(date_string)
+        let date = new Date(_value);
+        let date_string = date.getFullYear() + '-' + str_pad(date.getMonth() + 1) + '-' + str_pad(date.getDate());
         super.value = date_string;
     }
 }
@@ -517,7 +512,7 @@ class submit_input extends active_html_base {
         ]);
         concat_attributes(attributes, extra_attributes);
         super(parent, tag, inner, attributes);
-        if (parent.tag != 'form') {
+        if (parent.tag !== 'form' && parent.tag !== undefined) {
             console.warn('submit_input elements should be inside form elements. (' + this.id + ')');
         }
     }
@@ -548,15 +543,15 @@ class bs_form_group extends active_html_base {
 }
 
 class bs_form extends active_html_base {
-    constructor(parent, fields, buttons, extra_attributes = []) {
+    constructor(parent, elements, fields, buttons, extra_attributes = []) {
         let tag = 'form';
         let inner = [];
-        for (let control of Object.values(fields)) {
+        for (let control of Object.values(elements /*fields*/)) {
             inner.push(control);
         }
-        for (let control of Object.values(buttons)) {
-            inner.push(control);
-        }
+        // for (let control of Object.values(buttons)) {
+        //     inner.push(control);
+        // }
 
         let attributes = new Map();
         concat_attributes(attributes, extra_attributes);
@@ -569,7 +564,9 @@ class bs_form extends active_html_base {
     get_values() {
         let ret = {};
         for (let [field, control] of Object.entries(this.fields)) {
-            ret[field] = control.value;
+            if (control.value !== undefined) {
+                ret[field] = control.value;
+            }
         }
         return ret;
     }

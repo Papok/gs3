@@ -67,7 +67,7 @@ class login_form extends html.bs_form {
             ['class', 'form-control']
         ]));
         let username_form = new html.bs_form_group('autoparent', username_label, username_input, new Map([
-            ['class', 'col-12 col-sm-4 offset-sm-4']
+            ['class', 'col-12']
         ]));
 
         //
@@ -79,14 +79,14 @@ class login_form extends html.bs_form {
             ['class', 'form-control']
         ]));
         let password_form = new html.bs_form_group('autoparent', password_label, password_input, new Map([
-            ['class', 'col-12 col-sm-4 offset-sm-4']
+            ['class', 'col-12']
         ]));
 
         //
         // Buttons
         //
         let login_button = new html.submit_input('autoparent', 'Login', new Map([
-            ['class', 'col-12 col-sm-4 offset-sm-4'],
+            ['class', 'btn btn-dark col-12'],
         ]));
 
 
@@ -101,7 +101,17 @@ class login_form extends html.bs_form {
             login: login_button
         };
 
-        super(parent, form_fields, form_buttons, new Map([
+        let fields_div = new html.div('autoparent', [username_form, password_form],
+            new Map([
+                ['class', 'col-12 col-sm-4 offset-sm-4']
+            ]))
+
+        let buttons_div = new html.div('autoparent', [login_button],
+            new Map([
+                ['class', 'col-12 col-sm-4 offset-sm-4']
+            ]))
+
+        super(parent, [fields_div, buttons_div], form_fields, form_buttons, new Map([
             ['class', 'form-row']
         ]));
         this.set_handler('submit', (event) => {
@@ -132,7 +142,7 @@ class expenditure_input_form extends html.bs_form {
             ['class', 'form-control']
         ]));
         let date_form = new html.bs_form_group('autoparent', date_label, date_input, new Map([
-            ['class', 'col-6 col-sm-4 col-md-3 mb-3'],
+            ['class', 'col-7 col-md-3 order-md-1'],
         ]));
 
         //
@@ -143,7 +153,7 @@ class expenditure_input_form extends html.bs_form {
             ['class', 'form-control']
         ]));
         let buyer_form = new html.bs_form_group('autoparent', buyer_label, buyer_select, new Map([
-            ['class', 'col-6 col-sm-4 col-md-3 mb-3'],
+            ['class', 'col-5 col-md-2 order-md-2'],
         ]));
 
 
@@ -155,7 +165,7 @@ class expenditure_input_form extends html.bs_form {
             ['class', 'form-control']
         ]));
         let category_form = new html.bs_form_group('autoparent', category_label, category_select, new Map([
-            ['class', 'col-12 col-sm-4 col-md-3 order-md-4 mb-3'],
+            ['class', 'col-12 col-md-3 order-md-5'],
         ]));
 
 
@@ -167,7 +177,7 @@ class expenditure_input_form extends html.bs_form {
             ['class', 'form-control']
         ]));
         let details_form = new html.bs_form_group('autoparent', details_label, details_text_input, new Map([
-            ['class', 'col-8 col-sm-8 col-md-6 order-md-5 mb-3'],
+            ['class', 'col-8 col-md-9 order-md-6'],
         ]));
 
         //
@@ -178,7 +188,7 @@ class expenditure_input_form extends html.bs_form {
             ['class', 'form-control']
         ]));
         let amount_form = new html.bs_form_group('autoparent', amount_label, amount_text_input, new Map([
-            ['class', 'col-4 col-sm-4 col-md-2 order-md-6 mb-3'],
+            ['class', 'col-4 col-md-2 order-md-4'],
         ]));
 
         //
@@ -189,7 +199,7 @@ class expenditure_input_form extends html.bs_form {
             ['class', 'form-control']
         ]));
         let pay_method_form = new html.bs_form_group('autoparent', pay_method_label, pay_method_select, new Map([
-            ['class', 'col-12 col-sm-8 col-md-6 mb-3 order-11 order-md-3'],
+            ['class', 'col-12 col-md-5 order-md-3'],
         ]));
 
         //
@@ -197,24 +207,24 @@ class expenditure_input_form extends html.bs_form {
         //
         let add_button = new html.button('autoparent', 'Add', new Map([
             ['type', 'button'],
-            ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+            ['class', 'btn btn-success col-12'],
         ]));
         let save_button = new html.button('autoparent', 'Save', new Map([
             ['type', 'button'],
-            ['class', 'col-12 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+            ['class', 'btn btn-success col-12'],
         ]));
         let reset_button = new html.button('autoparent', 'Reset', new Map([
             ['type', 'button'],
-            ['class', 'col-6 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+            ['class', 'btn btn-danger col-6'],
         ]));
 
         let delete_button = new html.button('autoparent', 'Delete', new Map([
             ['type', 'button'],
-            ['class', 'col-6 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+            ['class', 'btn btn-danger col-6'],
         ]));
         let cancel_button = new html.button('autoparent', 'Cancel', new Map([
             ['type', 'button'],
-            ['class', 'col-6 col-sm-4 col-md-1 mb-3 order-12 order-md-12'],
+            ['class', 'btn btn-secondary col-6'],
         ]));
 
 
@@ -235,7 +245,28 @@ class expenditure_input_form extends html.bs_form {
             cancel_button: cancel_button,
         };
 
-        super(parent, form_fields, form_buttons, new Map([
+        let fields_div = new html.div('autoparent', [
+            date_form,
+            buyer_form,
+            category_form,
+            pay_method_form,
+            details_form,
+            amount_form
+        ], new Map([
+            ['class', 'form-row col-12 col-md-10']
+        ]))
+        let buttons_div = new html.div('autoparent', [
+            add_button,
+            save_button,
+            reset_button,
+            delete_button,
+            cancel_button
+        ], new Map([
+            ['class', 'form-row col-12 col-md-2']
+        ]))
+
+
+        super(parent, [fields_div, buttons_div], form_fields, form_buttons, new Map([
             ['class', 'form-row']
         ]));
 
@@ -304,7 +335,7 @@ class expenditure_input_form extends html.bs_form {
         let yyyy = date.getFullYear();
         let date_string = yyyy + '-' + mm + '-' + dd;
         let reset_values = {
-            date: date,//_string,
+            date: date, //_string,
             buyer: this.selectable_items.buyers[0],
             category: this.selectable_items.categories[0],
             pay_method: this.selectable_items.categories[0],
@@ -313,7 +344,7 @@ class expenditure_input_form extends html.bs_form {
         }
         this.set_values(reset_values);
     }
-    
+
     // get_values() {
     //     let values = super.get_values();
     //     console.log(values)
@@ -369,7 +400,10 @@ class expenditure_list extends html.div {
             });
         }
         let list = new html.div('autoparent', list_items);
-        let button = new html.button('autoparent', "New expenditure")
+        let button = new html.button('autoparent', "New expenditure", new Map([
+            ['type', 'button'],
+            ['class', "btn btn-primary col-12 col-sm-4 offset-sm-4"]
+        ]))
         button.set_handler('click', () => {
             environment.emit("add_mode");
         })

@@ -15,6 +15,8 @@ let server = http.createServer(router);
 let io = socketio.listen(server);
 io.set('log level', 2);
 
+router.use(express.static(path.resolve(path.resolve(), 'client')));
+
 let categories = [];
 let categories_names = ['Super', 'Farmacia', 'Educación', 'Extra-curricular', 'Esparcimiento', 'Gastos Casa', 'Comida Afuera'];
 for (let categorie of categories_names) {
@@ -44,7 +46,7 @@ for (let pay_method of pay_methods_names) {
 var expenditures = [];
 
 console.log("--gs3--")
-router.use(express.static(path.resolve(path.resolve(), 'client')));
+
 var messages = [];
 var sockets = [];
 
@@ -69,11 +71,6 @@ io.on('connection', function(socket) {
                 else {
                     let init_data = JSON.parse(file_data);
                     socket.emit('init', init_data);
-                    // mdb.watch(function(err){
-                    //     if (err) {
-                    //         console.log("Error setting watch");
-                    //     }
-                    // });
                 }
                 mdb.load_expenditures((err, data) => {
                     if (err) {
@@ -102,11 +99,11 @@ io.on('connection', function(socket) {
     });
 
     socket.on('add_expenditure', function(expenditure) {
-        console.log("Adding", expenditure)
-        console.log("To", expenditures)
+        // console.log("Adding", expenditure)
+        // console.log("To", expenditures)
         let new_expenditure = new logic.Expenditure(expenditure);
         expenditures.push(new_expenditure);
-        console.log("Resulting in", expenditures)
+        // console.log("Resulting in", expenditures)
         upsert_expenditure(new_expenditure);
     });
 
@@ -118,15 +115,15 @@ io.on('connection', function(socket) {
     });
 
     socket.on('delete_expenditure', function(expenditure_uid) {
-        console.log("Deleting", expenditure_uid)
-        console.log("From", expenditures)
+        // console.log("Deleting", expenditure_uid)
+        // console.log("From", expenditures)
         let idx = expenditures.findIndex(expenditure => expenditure.uid === expenditure_uid);
         if (idx > -1) {
             expenditures.splice(idx, 1);
         }
         else {
             remote_log("Error trying to delete expenditure.");
-            console.log("error deleting", expenditure_uid)
+            // console.log("error deleting", expenditure_uid)
         }
         delete_expenditure(expenditure_uid);
     });
@@ -172,14 +169,14 @@ io.on('connection', function(socket) {
 
 
 function upsert_expenditure(expenditure) {
-    console.log("Upserting");
+    // console.log("Upserting");
     mdb.upsert_expenditure(expenditure, (err) => {
         if (err) {
             console.log("Error upserting expenditure file.", err);
         }
         else {
             broadcast("update_expenditures", expenditures);
-            console.log("broadcasting", expenditures);
+            // console.log("broadcasting", expenditures);
         }
     });
 }
@@ -192,7 +189,7 @@ function delete_expenditure(expenditure_uid) {
         }
         else {
             broadcast("update_expenditures", expenditures);
-            console.log("broadcasting", expenditures);
+            // console.log("broadcasting", expenditures);
         }
     })
 }
