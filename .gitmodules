@@ -1,0 +1,3 @@
+[submodule "client/tinycolorpicker"]
+	path = client/tinycolorpicker
+	url = https://github.com/Papok/tinycolorpicker

@@ -67,3 +67,10 @@ transactions.json
 
 # the presence of the file indicates development environmet
 devenviro
+
+# eslint configuration
+.eslint
+.eslint.json
+
+# jsdoc
+out/

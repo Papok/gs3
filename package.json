@@ -19,6 +19,7 @@
   "homepage": "https://github.com/Papok/gs3#readme",
   "dependencies": {
     "async": "^2.6.1",
+    "cookie-parser": "^1.4.3",
     "express": "^4.16.3",
     "mongodb": "^3.1.4",
     "socket.io": "^2.1.1"
