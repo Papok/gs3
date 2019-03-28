@@ -1048,13 +1048,9 @@ class colorpicker extends div {
   }
 
   get value() {
-    console.log("color get");
-    console.log(this);
     // let $picker = document.getElementById(this.id);
     // this.picker = tinycolorpicker($picker);
     let ret = this.picker.colorRGB;
-    console.log(this.picker);
-    console.log(ret);
     return ret;
   }
 

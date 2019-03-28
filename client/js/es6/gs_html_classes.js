@@ -3,7 +3,8 @@
 import * as html from "./html_classes.js";
 import * as logic from "../../../common/logic_classes.mjs";
 import {hsl2rgb, camel2snake} from "./misc.js";
-//import colorpicker from "./colorpicker.js"
+import * as log from "./logger.js"
+
 let colorpicker = html.colorpicker;
 
 var socket = undefined;
@@ -18,7 +19,7 @@ function init(env) {
 function get_attr_by_attr_in_array(array, search_attr, search_value, ret_attr) {
   let item = array[array.findIndex(item => item[search_attr] == search_value)];
   if (item === undefined) {
-    console.error(
+    log.error(
       "Element not found in array. The database seems to be corrupted."
     );
     return undefined;
@@ -38,7 +39,7 @@ function remove_from_list(list, element) {
   if (index > -1) {
     list.splice(index, 1);
   } else {
-    console.log("ERROR: Element not found in index.");
+    log.error("ERROR: Element not found in index.");
   }
 }
 
@@ -182,11 +183,7 @@ class form_fields extends html.div {
 
   get_values() {
     let ret = {};
-    console.log("get_values↓↓↓↓")
-    console.log(this.reference)
     for (let [field, control] of Object.entries(this.reference)) {
-      console.log(field)
-      console.log(control)
       if (control.value !== undefined) {
         ret[field] = control.value;
       }
@@ -255,7 +252,6 @@ class add_edit_buttons extends html.div {
 
     save_button.set_handler("click", () => {
       let edit_category = fields.get_values();
-      console.log(edit_category)
       edit_category._uid = fields.fill_data._uid;
 
       environment.emit(edit_message, edit_category);
@@ -992,7 +988,6 @@ class top_buttons extends html.div {
 
 class selectable_row extends html.bs_row {
   constructor(parent, item, selectable_type) {
-    console.error(selectable_type)
     selectable_type = selectable_type.toLowerCase();
     let label = item.label;
     let color_sample = new html.span(
@@ -1066,9 +1061,8 @@ class edit_selectables_pane extends html.div {
 
 class edit_selectables_pane_card extends html.div {
   constructor(parent, selectable) {
-    let type = selectable[1].label.toLowerCase();
+    let type = selectable[1].type.toLowerCase();
     let logic_type = selectable[1].type;
-    console.log(selectable[1])
     let add_item_message = "add_" + type + "_mode";
     let list_mode_message = "list_" + type + "_mode";
     let label = selectable[1].label;
@@ -1110,7 +1104,7 @@ class edit_selectables_pane_card extends html.div {
   }
   update(selectable_data) {
     let is_list_hidden = this.inner[2].attributes.get("hidden");
-    let type = selectable_data.label;
+    let type = selectable_data.type;
     let items = selectable_data.items;
     let list = new selectable_list("autoparent", items, type);
     if (is_list_hidden) {

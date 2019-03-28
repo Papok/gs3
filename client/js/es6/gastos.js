@@ -202,8 +202,6 @@ function test() {
     //
 
     for (let selectable of Object.entries(selectables)) {
-            console.log(selectable[1].type)
-
       let selectable_type = selectable[1].type.toLowerCase();
       let list_mode_message = "list_" + selectable_type + "_mode";
       let edit_mode_message = "edit_" + selectable_type + "_mode";
@@ -325,7 +323,6 @@ function test() {
       });
 
       global.on(edit_item_message, function(item) {
-        console.log(item._color);
         let edit_item_idx = selectable_data.items.findIndex(
           _item => _item._uid === item._uid
         );
@@ -335,7 +332,6 @@ function test() {
           item._color,
           item._uid
         );
-        console.log(edited_item);
         selectable_data.items[edit_item_idx] = edited_item;
 
         //socket.emit("edit_category", category);
