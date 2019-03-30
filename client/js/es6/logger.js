@@ -1,4 +1,4 @@
-let level = 4;
+let level = 5;
 let custom = new Set([]);
 
 const custom_level = 0; //  the logger funciton logs if it is in the custom set

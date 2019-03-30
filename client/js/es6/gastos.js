@@ -5,11 +5,9 @@ import * as gs_html from "./gs_html_classes.js";
 import * as logic from "../../../common/logic_classes.mjs";
 import * as csv from "./csv.js";
 import { delete_cookie, camel2snake } from "./misc.js";
-import * as log from "./logger.js"
-
+import * as log from "./logger.js";
 
 var global = {};
-
 
 log.info("Running.");
 var socket = io.connect();
@@ -20,7 +18,6 @@ global.on = function(event, f) {
   this.events.set(event, f);
 };
 global.emit = function(event, payload) {
-  console.log(event, payload);
   this.events.get(event)(payload);
 };
 
@@ -96,6 +93,10 @@ function test() {
     console.log("Server says:", text);
   });
 
+  socket.on("remote_error", function(text) {
+    alert("Server error:\n" + text);
+  });
+
   socket.on("user_wrong", function() {
     console.log("user_wrong");
     if (login_box.drawn) {
@@ -106,8 +107,19 @@ function test() {
     }
   });
 
+  socket.on("missing_selectables_database", function(msg) {
+    let ok = confirm(
+      "Error with selectables database:\n" +
+        msg +
+        "\nThe database will be rebuilt."
+    );
+    if (ok) {
+      socket.emit("initialize_selectables_database");
+    }
+  });
+
   socket.on("init", function(data) {
-    console.log("Init recived.");
+    log.log("Init recived.");
     login_box.remove();
     let init_data = data;
 
@@ -124,13 +136,12 @@ function test() {
     for (let selectable of Object.keys(selectable_items)) {
       selectable_items[selectable] = deserialize_into(
         init_data[selectable].data,
-        init_data[selectable].type
+        init_data[selectable].logic_class
       );
-      console.log(init_data[selectable].type);
       selectables[selectable] = {
-        type: camel2snake(init_data[selectable].type),
-        logic_class: init_data[selectable].type,
-        label: init_data[selectable].type,
+        type: selectable,
+        logic_class: init_data[selectable].logic_class,
+        label: init_data[selectable].label,
         items: selectable_items[selectable]
       };
     }
@@ -230,8 +241,6 @@ function test() {
         selectable_edit_form.draw();
         selectable_edit_form.set_edit_mode(fill_category);
         selectable_edit_form.link_handlers();
-
-        
       });
 
       global.on(add_mode_message, function() {
@@ -273,6 +282,10 @@ function test() {
       socket.emit("edit_expenditure", expenditure);
       update_expenditures(expenditures);
     });
+
+    //
+    // The folowing loop defines listeners for adding, deleting and editing selectables.
+    //
 
     for (let selectable of Object.entries(selectables)) {
       let selectable_data = selectable[1];

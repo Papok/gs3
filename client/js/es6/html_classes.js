@@ -4,6 +4,8 @@ import tinycolorpicker from "/tinycolorpicker/lib/tinycolorpicker.js";
 import * as logic from "../../../common/logic_classes.mjs";
 import { MixinBiulder, mix, form_field } from "../../../common/class_mixer.js";
 import { hsl2rgb } from "./misc.js";
+import * as log from "./logger.js";
+
 
 let id = 0;
 let socket = undefined;
@@ -347,9 +349,13 @@ class select extends active_html_base {
     let attributes = new Map([["autocomplete", "off"]]);
     concat_attributes(attributes, extra_attributes);
     super(parent, tag, inner, attributes);
+    if (options.length !== 0) {
     this._value = value === 0 ? options[0].uid : value;
+    }
     this._options = options;
     this._update_options(options);
+    
+    
   }
 
   draw() {

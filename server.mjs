@@ -1,5 +1,3 @@
-//import * as logic from '../common/logic_classes.js';
-//import * as logic from '/home/ubuntu/workspace/client/common/logic_classes.mjs';
 import * as logic from "./client/common/logic_classes.mjs";
 import * as db from "./db.mjs";
 import * as mdb from "./mdb.mjs";
@@ -83,14 +81,21 @@ console.log("--gs3--");
 var messages = [];
 var sockets = [];
 
-io.on("connection", function(socket) {
-  // messages.forEach(function(data) {
-  //     socket.emit('message', data);
-  // });
+server.listen(
+  process.env.PORT || 3000,
+  process.env.IP || "0.0.0.0",
+  function() {
+    var addr = server.address();
+    console.log("gs3 server listening at", addr.address + ":" + addr.port);
+  }
+);
 
+io.on("connection", function(socket) {
+  let user;
   sockets.push(socket);
 
-  socket.on("validate_user", function(user) {
+  socket.on("validate_user", function(username) {
+    user = username;
     if (user === "papo") {
       init(socket, user);
     } else {
@@ -104,12 +109,21 @@ io.on("connection", function(socket) {
   });
 
   socket.on("go", function(username) {
+    user = username;
     remote_log("going");
     if (username == "papo") {
-      init(socket, username);
+      init(socket, user);
     } else {
       remote_log("wrong username");
     }
+  });
+
+  socket.on("initialize_selectables_database", function() {
+    initialize_selectables_database(socket);
+    // hay que pasar esto a promize porque la llamada a init está quedando adentro de initialize_selectables_database() y
+    // esto es medio desprolijo.
+    // la otra posibilidad es avisarle al cliente que la base de datos esta inicializada y que que el cliente pida un init...
+    // me parece mejor las promise. no tiene porque intervenir el cliente en este proceso
   });
 
   socket.on("update_categories", function() {
@@ -123,11 +137,8 @@ io.on("connection", function(socket) {
   });
 
   socket.on("add_expenditure", function(expenditure) {
-    // console.log("Adding", expenditure)
-    // console.log("To", expenditures)
     let new_expenditure = new logic.Expenditure(expenditure);
     expenditures.push(new_expenditure);
-    // console.log("Resulting in", expenditures)
     upsert_expenditure(new_expenditure);
   });
 
@@ -141,8 +152,6 @@ io.on("connection", function(socket) {
   });
 
   socket.on("delete_expenditure", function(expenditure_uid) {
-    // console.log("Deleting", expenditure_uid)
-    // console.log("From", expenditures)
     let idx = expenditures.findIndex(
       expenditure => expenditure.uid === expenditure_uid
     );
@@ -150,7 +159,6 @@ io.on("connection", function(socket) {
       expenditures.splice(idx, 1);
     } else {
       remote_log("Error trying to delete expenditure.");
-      // console.log("error deleting", expenditure_uid)
     }
     delete_expenditure(expenditure_uid);
   });
@@ -165,14 +173,7 @@ io.on("connection", function(socket) {
   });
 
   socket.on("load_expenditures", function() {
-    mdb.load_expenditures((err, data) => {
-      if (err) {
-        remote_log("Error loading expenditures data.");
-      } else {
-        expenditures = data;
-        socket.emit("update_expenditures", expenditures);
-      }
-    });
+    client_update_expenditures(socket);
   });
 
   socket.on("load_selectable", function(selectable_type) {
@@ -181,7 +182,7 @@ io.on("connection", function(socket) {
       if (err) {
         remote_log("Error loading " + selectable_type + " data.");
       } else {
-        console.log(update_message)
+        console.log(update_message);
         socket.emit(update_message, data);
       }
     });
@@ -196,47 +197,66 @@ function remote_log(socket, text) {
   socket.emit("remote_log", text);
 }
 
-function init(socket, username) {
-  db.load_init_file((err, file_data) => {
-    if (err) {
-      remote_log(socket, "Error loading init data.");
-    } else {
-      let init_data = JSON.parse(file_data);
-      console.log(Object.keys(init_data));
-      // revisar si esta bien escrito por el tema del for y el callback
-      for (let selectable of Object.keys(init_data)) {
-        mdb.exists(selectable, (err, res) => {
-          if (err) {
-            remote_log(socket, "Error retriving database status.");
-          } else {
-            if (res) {
-              update_selectable(selectable);
-            } else {
-              console.log(selectable, "not in database");
-              mdb.save_records(init_data[selectable].data, selectable, err => {
-                if (err) {
-                  console.log(
-                    "Error initalizating " + selectable + " database",
-                    err
-                  );
-                } else {
-                  console.log(selectable + " database initialized");
-                }
-              });
-            }
-          }
-        });
-      }
-      socket.emit("init", init_data);
-    }
-    mdb.load_expenditures((err, data) => {
+function remote_error(socket, text) {
+  socket.emit("remote_error", text);
+}
+
+const load_records = type => {
+  return new Promise((resolve, reject) => {
+    mdb.exists(type, (err, res) => {
       if (err) {
-        remote_log(socket, "Error loading expenditures data.");
+        reject("Error retriving database status. (" + type + ")");
       } else {
-        expenditures = data;
-        socket.emit("update_expenditures", expenditures);
+        if (res) {
+          mdb.load_records(type, (err, docs) => {
+            if (err) {
+              reject("Error retriving database data. (" + type + ")");
+            } else {
+              resolve({ type: type, data: docs });
+            }
+          });
+        } else {
+          reject("Database does not exist. (" + type + ")");
+        }
       }
     });
+  });
+};
+
+function init(socket, username) {
+  console.log("init");
+  let init_data = {};
+  db.load_selectable_types((err, file_data) => {
+    if (err) {
+      remote_log(socket, "Error loading selectable_types data.");
+    } else {
+      let selectable_types_data = JSON.parse(file_data);
+      let selectable_types = Object.keys(selectable_types_data);
+      let jobs = [];
+      for (let selectable_type of selectable_types) {
+        jobs.push(load_records(selectable_type));
+      }
+      console.log(jobs);
+      Promise.all(jobs).then(
+        function(results) {
+          for (let result of results) {
+            init_data[result.type] = {};
+            init_data[result.type].data = result.data;
+            init_data[result.type].logic_class =
+              selectable_types_data[result.type].logic_class;
+            init_data[result.type].label =
+              selectable_types_data[result.type].label;
+          }
+          console.log("success", init_data);
+          socket.emit("init", init_data);
+          client_update_expenditures(socket);
+        },
+        err => {
+          console.log("error:" + err);
+          socket.emit("missing_selectables_database", err);
+        }
+      );
+    }
   });
 }
 
@@ -281,11 +301,35 @@ function remove_from_list(list, element) {
   }
 }
 
-server.listen(
-  process.env.PORT || 3000,
-  process.env.IP || "0.0.0.0",
-  function() {
-    var addr = server.address();
-    console.log("gs3 server listening at", addr.address + ":" + addr.port);
-  }
-);
+function initialize_selectables_database(socket) {
+  db.load_init_file((err, file_data) => {
+    if (err) {
+      return false;
+    } else {
+      let init_data = JSON.parse(file_data);
+      console.log(Object.keys(init_data));
+      // revisar si esta bien escrito por el tema del for y el callback
+      for (let selectable of Object.keys(init_data)) {
+        mdb.save_records(init_data[selectable].data, selectable, err => {
+          if (err) {
+            console.log(err);
+            remote_error(err);
+          } else {
+            init(socket);
+          }
+        });
+      }
+    }
+  });
+}
+
+function client_update_expenditures(socket) {
+  mdb.load_expenditures((err, data) => {
+    if (err) {
+      remote_log(socket, "Error loading expenditures data.");
+    } else {
+      expenditures = data;
+      socket.emit("update_expenditures", expenditures);
+    }
+  });
+}

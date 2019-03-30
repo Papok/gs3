@@ -43,7 +43,8 @@
                 "_uid": 1531839933558006
             }
         ],
-        "type": "Category"
+        "logic_class": "Category",
+        "label": "Category"
     },
     "buyers": {
         "data": [{
@@ -59,7 +60,8 @@
                 "_uid": 1531839933558008
             }
         ],
-        "type": "Buyer"
+        "logic_class": "Buyer",
+        "label": "Buyer"
     },
     "pay_methods": {
         "data": [{
@@ -75,6 +77,7 @@
                 "_uid": 1531839933559001
             }, { "_label": "Comafi Débito", "_value": 1531839933559002, "_color": "hsl(135, 100%, 75%)", "_uid": 1531839933559002 }, { "_label": "Galicia Visa Crédito", "_value": 1531839933559003, "_color": "hsl(180, 100%, 75%)", "_uid": 1531839933559003 }, { "_label": "Galicia Visa Débito", "_value": 1531839933559004, "_color": "hsl(225, 100%, 75%)", "_uid": 1531839933559004 }, { "_label": "Galicia Máster Crédito", "_value": 1531839933559005, "_color": "hsl(14, 100%, 75%)", "_uid": 1531839933559005 }, { "_label": "Galicia Máster Débito", "_value": 1531839933559006, "_color": "hsl(59, 100%, 75%)", "_uid": 1531839933559006 }, { "_label": "Santander Crédito", "_value": 1531839933559007, "_color": "hsl(104, 100%, 75%)", "_uid": 1531839933559007 }, { "_label": "Santander Débito", "_value": 1531839933559008, "_color": "hsl(149, 100%, 75%)", "_uid": 1531839933559008 }, { "_label": "Nación Débito", "_value": 1531839933559009, "_color": "hsl(194, 100%, 75%)", "_uid": 1531839933559009 }
         ],
-        "type": "PayMethod"
+        "logic_class": "PayMethod",
+        "label": "Pay Method"
     }
 }

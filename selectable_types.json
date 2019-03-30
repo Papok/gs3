@@ -1,0 +1,14 @@
+{
+  "categories": {
+    "logic_class": "Category",
+    "label": "Category"
+  },
+  "buyers": {
+    "logic_class": "Buyer",
+    "label": "Buyer"
+  },
+  "pay_methods": {
+    "logic_class": "PayMethod",
+    "label": "Pay Method"
+  }
+}

@@ -1,0 +1,153 @@
+function save_records(records, type, f) {
+  console.log("Saving", records.length);
+  let collection_name = my_collection_name + "_" + type;
+  MongoClient.connect(
+    url,
+    function(err, client) {
+      if (err) {
+        console.log("Error connecting to database.");
+        console.log(err);
+        f(err);
+        return;
+      }
+      let db = client.db("hgs3d");
+      let records_collection = db.collection(collection_name);
+      records_collection.drop(function(err) {
+        if (err && err.code !== 26) {
+          console.log("Error dropping records.");
+          console.log(err);
+          f(err);
+          return;
+        }
+        records_collection.insert(records, function(err, result) {
+          if (err) {
+            console.log("Error saving records.");
+            console.log(err);
+            f(err);
+            return;
+          }
+          client.close(function(err) {
+            if (err) {
+              console.log("Error closing database");
+              console.log(err);
+              f(err);
+              return;
+            }
+            f(err);
+          });
+        });
+      });
+    }
+  );
+}
+
+function load_records(type, f) {
+  let collection_name = my_collection_name + "_" + type;
+  MongoClient.connect(
+    url,
+    function(err, client) {
+      if (err) {
+        console.log("Error connecting to database.");
+        console.log(err);
+        f(err);
+        return;
+      }
+      let db = client.db("hgs3d");
+      let records_collection = db.collection(collection_name);
+      records_collection.find().toArray(function(err, docs) {
+        if (err) {
+          console.log("Error retriving from database.");
+          console.log(err);
+          f(err);
+          return;
+        }
+        client.close(function(err) {
+          if (err) {
+            console.log("Error closing database");
+            console.log(err);
+            f(err);
+            return;
+          }
+          f(err, docs);
+        });
+      });
+    }
+  );
+}
+
+function upsert_record(record, type , f) {
+  let collection_name = my_collection_name + "_" + type;
+  MongoClient.connect(
+    url,
+    function(err, client) {
+      if (err) {
+        console.log("Error connecting to database.");
+        console.log(err);
+        f(err);
+        return;
+      }
+      let db = client.db("hgs3d");
+      let records_collection = db.collection(collection_name);
+      records_collection.updateOne(
+        { uid: record.uid },
+        { $set: record },
+        { upsert: true },
+        function(err, count, status) {
+          if (err) {
+            console.log("Error updating database.");
+            console.log(err);
+            f(err);
+            return;
+          }
+          client.close(function(err) {
+            if (err) {
+              console.log("Error closing database");
+              console.log(err);
+              f(err);
+              return;
+            }
+            f(err);
+          });
+        }
+      );
+    }
+  );
+}
+
+function delete_record(record_uid, type, f) {
+  let collection_name = my_collection_name + "_" + type;
+  MongoClient.connect(
+    url,
+    function(err, client) {
+      if (err) {
+        console.log("Error connecting to database.");
+        console.log(err);
+        f(err);
+        return;
+      }
+      let db = client.db("hgs3d");
+      let records_collection = db.collection(collection_name);
+      records_collection.deleteOne({ uid: record_uid }, function(
+        err,
+        count,
+        status
+      ) {
+        if (err) {
+          console.log("Error updating record.");
+          console.log(err);
+          f(err);
+          return;
+        }
+        client.close(function(err) {
+          if (err) {
+            console.log("Error closing database");
+            console.log(err);
+            f(err);
+            return;
+          }
+          f(err);
+        });
+      });
+    }
+  );
+}
