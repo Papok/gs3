@@ -56,4 +56,23 @@ let form_field = superclass =>
     }
   };
 
-export { MixinBiulder, mix, form_field };
+let dependable = superclass =>
+  class extends superclass {
+    add_dependant(dependant) {
+      if (this.dependants === undefined) {
+        this.dependants = [];
+      }
+      if (this.dependants.includes(dependant)) {
+        return;
+      }
+      this.dependants.push(dependant);
+    }
+
+    update_dependants() {
+      for (let dependant of this.dependants) {
+        dependant.update(this);
+      }
+    }
+  };
+
+export { MixinBiulder, mix, form_field, dependable };

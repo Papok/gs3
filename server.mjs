@@ -126,19 +126,22 @@ io.on("connection", function(socket) {
     // me parece mejor las promise. no tiene porque intervenir el cliente en este proceso
   });
 
-  socket.on("update_categories", function() {
-    remote_log("sending categories");
-    socket.emit("update_categories", categories);
-  });
-
-  socket.on("new_category", function(category) {
-    categories.push(category);
-    broadcast("update_categories", categories);
+  socket.on("add_selectable", function(data) {
+    let type = data.selectable_data.type;
+    let selectable_logic_class = data.selectable_data.logic_class;
+    let item = new logic[selectable_logic_class](
+      data.item._label,
+      data.item._uid,
+      data.item._color,
+      data.item._uid
+    );
+    console.log(item);
+    upsert_selectable(type, item);
   });
 
   socket.on("add_expenditure", function(expenditure) {
     let new_expenditure = new logic.Expenditure(expenditure);
-    expenditures.push(new_expenditure);
+    // expenditures.push(new_expenditure);
     upsert_expenditure(new_expenditure);
   });
 
@@ -163,29 +166,16 @@ io.on("connection", function(socket) {
     delete_expenditure(expenditure_uid);
   });
 
-  socket.on("delete_category", function(category) {
-    remove_from_list(categories, category);
-    broadcast("update_categories", categories);
-  });
-
-  socket.on("backlog", function(msg) {
-    remote_log(msg);
+  socket.on("load_selectable", function(selectable_type) {
+    client_update_selectable(socket, selectable_type);
   });
 
   socket.on("load_expenditures", function() {
     client_update_expenditures(socket);
   });
 
-  socket.on("load_selectable", function(selectable_type) {
-    let update_message = "update_" + selectable_type;
-    mdb.load_records(selectable_type, (err, data) => {
-      if (err) {
-        remote_log("Error loading " + selectable_type + " data.");
-      } else {
-        console.log(update_message);
-        socket.emit(update_message, data);
-      }
-    });
+  socket.on("backlog", function(msg) {
+    remote_log(msg);
   });
 
   function remote_log(text) {
@@ -223,6 +213,10 @@ const load_records = type => {
   });
 };
 
+//
+// client modifying functions
+//
+
 function init(socket, username) {
   console.log("init");
   let init_data = {};
@@ -236,7 +230,6 @@ function init(socket, username) {
       for (let selectable_type of selectable_types) {
         jobs.push(load_records(selectable_type));
       }
-      console.log(jobs);
       Promise.all(jobs).then(
         function(results) {
           for (let result of results) {
@@ -247,7 +240,9 @@ function init(socket, username) {
             init_data[result.type].label =
               selectable_types_data[result.type].label;
           }
-          console.log("success", init_data);
+          
+          socket.emit("update_selectables", init_data);
+
           socket.emit("init", init_data);
           client_update_expenditures(socket);
         },
@@ -260,31 +255,95 @@ function init(socket, username) {
   });
 }
 
-function update_selectable(selectable) {
-  console.log("updating", selectable);
+function client_update_expenditures(socket) {
+  mdb.load_expenditures((err, data) => {
+    if (err) {
+      remote_log(socket, "Error loading expenditures data.");
+    } else {
+      expenditures = data;
+      socket.emit("update_expenditures", expenditures);
+    }
+  });
 }
 
-function upsert_expenditure(expenditure) {
-  mdb.upsert_expenditure(expenditure, err => {
+function client_update_selectable(socket, selectable_type) {
+  let update_message = "update_" + selectable_type;
+  mdb.load_records(selectable_type, (err, data) => {
+    if (err) {
+      remote_log("Error loading " + selectable_type + " data.");
+    } else {
+      socket.emit(update_message, data);
+    }
+  });
+}
+
+//
+// all client modifying functions
+//
+
+function all_clients_update_expenditures() {
+  mdb.load_expenditures((err, data) => {
+    if (err) {
+      console.log("ERROR: Error loading expenditures data.");
+    } else {
+      expenditures = data;
+      broadcast("update_expenditures", expenditures);
+    }
+  });
+}
+
+function all_clients_update_selectable(selectable_type) {
+  let update_message = "update_" + selectable_type;
+  mdb.load_records(selectable_type, (err, data) => {
+    if (err) {
+      console.log("ERROR: Error loading expenditures data.");
+    } else {
+      let items = data;
+      console.log(update_message);
+      broadcast(update_message, items);
+    }
+  });
+}
+
+//
+// database modifying functions
+//
+
+function upsert_selectable(type, item) {
+  mdb.upsert_record(item, type, err => {
     if (err) {
       console.log("Error upserting expenditure file.", err);
     } else {
-      broadcast("update_expenditures", expenditures);
+      all_clients_update_selectable(type);
+    }
+  });
+}
+
+function upsert_expenditure(expenditure) {
+  // mdb.upsert_expenditure(expenditure, err => {
+  mdb.upsert_record(expenditure, "expenditures", err => {
+    if (err) {
+      console.log("Error upserting expenditure file.", err);
+    } else {
+      all_clients_update_expenditures();
     }
   });
 }
 
 function delete_expenditure(expenditure_uid) {
-  console.log("Deleting");
-  mdb.delete_expenditure(expenditure_uid, err => {
+  // mdb.delete_expenditure(expenditure_uid, err => {
+  mdb.delete_record(expenditure_uid, "expenditures", err => {
     if (err) {
       console.log("Error deleting expenditure.", err);
     } else {
-      broadcast("update_expenditures", expenditures);
-      // console.log("broadcasting", expenditures);
+      all_clients_update_expenditures();
     }
   });
 }
+
+//
+//
+//
 
 function broadcast(event, data) {
   sockets.forEach(function(socket) {
@@ -307,7 +366,6 @@ function initialize_selectables_database(socket) {
       return false;
     } else {
       let init_data = JSON.parse(file_data);
-      console.log(Object.keys(init_data));
       // revisar si esta bien escrito por el tema del for y el callback
       for (let selectable of Object.keys(init_data)) {
         mdb.save_records(init_data[selectable].data, selectable, err => {
@@ -319,17 +377,6 @@ function initialize_selectables_database(socket) {
           }
         });
       }
-    }
-  });
-}
-
-function client_update_expenditures(socket) {
-  mdb.load_expenditures((err, data) => {
-    if (err) {
-      remote_log(socket, "Error loading expenditures data.");
-    } else {
-      expenditures = data;
-      socket.emit("update_expenditures", expenditures);
     }
   });
 }

@@ -349,6 +349,7 @@ class select extends active_html_base {
     let attributes = new Map([["autocomplete", "off"]]);
     concat_attributes(attributes, extra_attributes);
     super(parent, tag, inner, attributes);
+    log.debug(options.length, options)
     if (options.length !== 0) {
     this._value = value === 0 ? options[0].uid : value;
     }
@@ -376,6 +377,7 @@ class select extends active_html_base {
   }
 
   _update_options(options = [new logic.rich_option_item()]) {
+    log.debug(options)
     // esto da error porque en ningun momento importo esta clase, aunque no debería llegar a la instancia donde no se provee "options"
     this._value = this._value === 0 ? options[0]._value : this._value;
     this.inner = [];
@@ -385,6 +387,7 @@ class select extends active_html_base {
   }
 
   _add_option(new_option) {
+    log.debug(new_option)
     if (this._value == new_option._value) {
       new_option.add_attr("selected", "selected");
     }
@@ -396,8 +399,7 @@ class select extends active_html_base {
     if (this.drawn && this.autodraw) {
       this.draw();
     } else {
-      console.log("tried to draw");
-      console.log(this);
+      log.error("tried to draw", this);
     }
   }
 

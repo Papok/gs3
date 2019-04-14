@@ -109,6 +109,12 @@ class Selectables {
       this[selectable] = new Selectable(selectables[selectable]);
     }
   }
+
+  update(selectables) {
+    for (let selectable of Object.keys(selectables)) {
+      this[selectable] = new Selectable(selectables[selectable]);
+    }
+  }
 }
 
 export { gen_uid, Expenditure, Buyer, PayMethod, Category, Selectables };

@@ -2,8 +2,8 @@
 
 import * as html from "./html_classes.js";
 import * as logic from "../../../common/logic_classes.mjs";
-import {hsl2rgb, camel2snake} from "./misc.js";
-import * as log from "./logger.js"
+import { hsl2rgb, camel2snake } from "./misc.js";
+import * as log from "./logger.js";
 
 let colorpicker = html.colorpicker;
 
@@ -14,7 +14,6 @@ function init(env) {
   environment = env;
   socket = env.socket;
 }
-
 
 function get_attr_by_attr_in_array(array, search_attr, search_value, ret_attr) {
   let item = array[array.findIndex(item => item[search_attr] == search_value)];
@@ -61,6 +60,14 @@ function get_styles(categories) {
   styles += "}";
 
   return styles;
+}
+
+function get_selectable_items(selectables) {
+  let selectable_items = {};
+  for (let [selectable, data] of Object.entries(selectables)) {
+    selectable_items[selectable] = data.items;
+  }
+  return selectable_items;
 }
 
 class login_form extends html.bs_form {
@@ -407,10 +414,9 @@ class selectable_form extends html.form {
       form_buttons,
       new Map([["class", "form-row"]])
     );
-    
 
     this.uid_html_attribute = "data-" + selectable_type + "-uid";
-    
+
     // this is to prevent from "submiting" the form when pressing "enter" on the only field of the form.
     this.set_handler("submit", function() {
       return false;
@@ -431,18 +437,12 @@ class selectable_form extends html.form {
 }
 
 class expenditure_input_form extends html.bs_form {
-  constructor(parent, selectable_items, fill_expenditure) {
-    // const form_mode = {
-    //   ADD: Symbol("add"),
-    //   EDIT: Symbol("edit")
-    // };
-    // Object.freeze(form_mode);
-    // let mode = fill_expenditure === undefined ? form_mode.ADD : form_mode.EDIT;
+  constructor(parent, selectables, fill_expenditure) {
+    let selectable_items = get_selectable_items(selectables);
 
     //
     // Date
     //
-
     let date_label = "Date";
     let date_input = new html.date_input(
       "autoparent",
@@ -641,7 +641,14 @@ class expenditure_input_form extends html.bs_form {
     });
   }
 
+  update(selectables) {
+    log.debug("updating selectables")
+    this.update_options(get_selectable_items(selectables));
+    log.debug(this.fields.buyer.control)
+  }
   update_options(selectable_items) {
+        log.debug("updating selectables items", selectable_items)
+
     this.fields.buyer.control.update_options(selectable_items.buyers);
     this.fields.category.control.update_options(selectable_items.categories);
     this.fields.pay_method.control.update_options(selectable_items.pay_methods);
@@ -837,7 +844,7 @@ class expenditure_list extends html.div {
     //let selectables_data = selectables[1];
     let selectables_items = {};
     for (let selectable of Object.entries(selectables)) {
-      let selectable_type = selectable[0]
+      let selectable_type = selectable[0];
       let selectable_data = selectable[1];
       let selectable_items = selectable_data.items;
       selectables_items[selectable_type] = selectable_items;
@@ -952,14 +959,15 @@ class top_buttons extends html.div {
         ["class", "btn btn-primary col-2 col-sm-1 offset-sm-1"]
       ])
     );
-    
+
     let download_data_button = new html.button(
       "autopartent",
-      new html.span("autoparent", "", new Map([["class", "oi oi-data-transfer-download"]])),
-      new Map([
-        ["type", "button"],
-        ["class", "btn btn-primary col-2 col-sm-1"]
-      ])
+      new html.span(
+        "autoparent",
+        "",
+        new Map([["class", "oi oi-data-transfer-download"]])
+      ),
+      new Map([["type", "button"], ["class", "btn btn-primary col-2 col-sm-1"]])
     );
 
     add_expediture_button.set_handler("click", () => {
@@ -976,12 +984,17 @@ class top_buttons extends html.div {
         environment.emit("logout");
       }
     });
-    
+
     download_data_button.set_handler("click", () => {
       environment.emit("download_data");
     });
 
-    let inner = [logout_button, add_expediture_button, settings_button, download_data_button];
+    let inner = [
+      logout_button,
+      add_expediture_button,
+      settings_button,
+      download_data_button
+    ];
     super(parent, inner);
   }
 }
@@ -1100,7 +1113,6 @@ class edit_selectables_pane_card extends html.div {
       this.control.list.toggle();
       this.control.add_button.toggle();
     });
-
   }
   update(selectable_data) {
     let is_list_hidden = this.inner[2].attributes.get("hidden");

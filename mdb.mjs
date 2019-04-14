@@ -185,9 +185,9 @@ function delete_expenditure(expenditure_uid, f) {
   );
 }
 
-function save_records(records, type, f) {
+function save_records(records, collection_name, f) {
   console.log("Saving", records.length);
-  let collection_name = my_collection_prefix + type;
+  let collection_fullname = my_collection_prefix + collection_name;
   MongoClient.connect(
     url,
     function(err, client) {
@@ -198,7 +198,7 @@ function save_records(records, type, f) {
         return;
       }
       let db = client.db("hgs3d");
-      let records_collection = db.collection(collection_name);
+      let records_collection = db.collection(collection_fullname);
       records_collection.drop(function(err) {
         if (err && err.code !== 26) {
           console.log("Error dropping records.");
@@ -228,8 +228,8 @@ function save_records(records, type, f) {
   );
 }
 
-function load_records(type, f) {
-  let collection_name = my_collection_prefix + type;
+function load_records(collection_name, f) {
+  let collection_fullname = my_collection_prefix + collection_name;
   MongoClient.connect(
     url,
     function(err, client) {
@@ -240,7 +240,7 @@ function load_records(type, f) {
         return;
       }
       let db = client.db("hgs3d");
-      let records_collection = db.collection(collection_name);
+      let records_collection = db.collection(collection_fullname);
       records_collection.find().toArray(function(err, docs) {
         if (err) {
           console.log("Error retriving from database.");
@@ -262,8 +262,8 @@ function load_records(type, f) {
   );
 }
 
-function upsert_record(record, type, f) {
-  let collection_name = my_collection_prefix + type;
+function upsert_record(record, collection_name, f) {
+  let collection_fullname = my_collection_prefix + collection_name;
   MongoClient.connect(
     url,
     function(err, client) {
@@ -274,7 +274,7 @@ function upsert_record(record, type, f) {
         return;
       }
       let db = client.db("hgs3d");
-      let records_collection = db.collection(collection_name);
+      let records_collection = db.collection(collection_fullname);
       records_collection.updateOne(
         { uid: record.uid },
         { $set: record },
@@ -301,8 +301,8 @@ function upsert_record(record, type, f) {
   );
 }
 
-function delete_record(record_uid, type, f) {
-  let collection_name = my_collection_prefix + type;
+function delete_record(record_uid, collection_name, f) {
+  let collection_fullname = my_collection_prefix + collection_name;
   MongoClient.connect(
     url,
     function(err, client) {
@@ -313,7 +313,7 @@ function delete_record(record_uid, type, f) {
         return;
       }
       let db = client.db("hgs3d");
-      let records_collection = db.collection(collection_name);
+      let records_collection = db.collection(collection_fullname);
       records_collection.deleteOne({ uid: record_uid }, function(
         err,
         count,
