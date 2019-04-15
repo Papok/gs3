@@ -92,9 +92,8 @@ function login_control(login_box) {
   let coockie_found = false;
   for (let coockie of coockiearray) {
     let name = coockie.split("=")[0].trim();
-    let value = coockie.split("=")[1].trim();
-    console.log(coockie);
     if (name === "gs3user") {
+      let value = coockie.split("=")[1].trim();
       coockie_found = true;
       console.log("found", value);
       socket.emit("validate_user", value);
