@@ -1,6 +1,6 @@
 /* global $ */
 
-import tinycolorpicker from "../../../tinycolorpicker/lib/tinycolorpicker.js";
+import tinycolorpicker from "../../../tinycolorpicker/lib/tinycolorpicker_es6m.js";
 import * as logic from "../../../common/logic_classes.mjs";
 import { MixinBiulder, mix, form_field } from "../../../common/class_mixer.js";
 import { hsl2rgb } from "./misc.js";
